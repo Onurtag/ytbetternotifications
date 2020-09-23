@@ -20,7 +20,7 @@ ___
 
 * Email feature uses smtpjs.com. ***❗❗❗ Only use a fresh dummy account for this feature and assume that your password and account will be leaked***.   
 
-Email setup example (for sending only to your gmail account FROM a fresh dummy gmail account):  
+Email setup example (for sending only to a gmail account from a fresh dummy gmail account):  
 ```
 1. Create a new fake Gmail account with a random password that you dont use anywhere else
 

@@ -726,7 +726,8 @@ function addStyles() {
         z-index: 345;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
+        /*transform: translate(-50%, -50%);*/
+        transform: translateX(calc(-50% - 0.5px)) translateY(calc(-50% - 0.5px));
         color: #ddd;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.35);
     }
@@ -914,7 +915,8 @@ function addStyles() {
         position: absolute;
         top: 50%;
         left: 50%;
-        transform: translate(-50%, -50%);
+        /*transform: translate(-50%, -50%);*/
+        transform: translateX(calc(-50% - 0.5px)) translateY(calc(-50% - 0.5px));
         color: #ddd;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.35);
         background-color: rgb(30, 30, 30);
