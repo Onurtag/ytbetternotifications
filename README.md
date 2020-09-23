@@ -22,7 +22,7 @@ ___
 
 Email setup example (for sending only to a gmail account from a fresh dummy gmail account):  
 ```
-1. Create a new fake Gmail account with a random password that you dont use anywhere else
+1. Create a new dummy Gmail account with a random password that you dont use anywhere else
 
 2. Enable less secure apps for your new google account (google how)
 
