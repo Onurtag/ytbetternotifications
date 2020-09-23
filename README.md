@@ -37,7 +37,7 @@ After entering above settings click generate and save the exported token. You ca
 
 4. Now you can input your token and other email settings into the Youtube Better Notifications options menu. Using the email template below for subject and body fields is recommended.
 
-5. Click "Send test emails to send test emails to your destination account.
+5. Click "Send test emails" to send test emails to your destination account.
 ```
 
 ___  
