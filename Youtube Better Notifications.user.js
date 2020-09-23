@@ -1553,7 +1553,7 @@ function setupNotificationDiv() {
         </div>
         <div id="sidebuttonsBottom">
             <paper-button id="displayOptionsButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 1em 12px;">SETTINGS</paper-button>
-            <paper-checkbox style="margin-top: 2em; margin-left: 24px;" id="readallCheckbox" noink>Toggle All Read</paper-checkbox>
+            <paper-checkbox style="margin-top: 2em; margin-left: 24px;" id="readallCheckbox" noink>Toggle All Read/Unread</paper-checkbox>
         </div>
     </div>
     <div id="loadindicator" style="top: 43%;left: 46%;position: absolute;">
