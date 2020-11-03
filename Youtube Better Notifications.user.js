@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Youtube Better Notifications (Alpha)
 // @namespace       youtube.better.notifications
-// @version         1.0.0
+// @version         1.0.1
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -1284,11 +1284,17 @@ async function sendEmail(videoDict) {
         let ytInitialData_PARSED, ytInitialPlayerResponse_PARSED;
         for (let scriptindex = 0; scriptindex < emaildoc.scripts.length; scriptindex++) {
             const thescript = emaildoc.scripts[scriptindex];
-            if (thescript.innerHTML.indexOf('"ytInitialData"') != -1) {
+            //DONE: eval() or parse()
+            if (thescript.innerHTML.indexOf('var ytInitialData = ') != -1) {
                 // Also thescript.innerHTML.match(/window\[\"ytInitialData\"\] = (.*);\n\s*window\[\"ytInitialPlayerResponse/)[1];
-                ytInitialData_PARSED = JSON.parse(thescript.innerHTML.split("window[\"ytInitialData\"] = ")[1].split("ytInitialPlayerResponse")[0].split(";\n")[0]);
-                // Also ...
-                ytInitialPlayerResponse_PARSED = JSON.parse(thescript.innerHTML.split("window[\"ytInitialPlayerResponse\"] = ")[1].split("window.ytcsi")[0].split(";\n")[0]);
+                ytInitialData_PARSED = JSON.parse(thescript.innerHTML.split("var ytInitialData = ")[1].slice(0, -1));
+                
+            }            
+
+            // Find ytInitialPlayerResponse...
+            if (thescript.innerHTML.indexOf('var ytInitialPlayerResponse = ') != -1) {
+                ytInitialPlayerResponse_PARSED = JSON.parse(thescript.innerHTML.split("var ytInitialPlayerResponse = ")[1].split(";var meta = document.createElement('meta')")[0]);
+                
             }
         }
 
