@@ -1,15 +1,16 @@
 // ==UserScript==
 // @name            Youtube Better Notifications (Alpha)
 // @namespace       youtube.better.notifications
-// @version         1.0.1
+// @version         1.1.0
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
 // @grant           none
-// @require         https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.27.0/moment-with-locales.min.js
+// @require         https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/dexie/3.0.2/dexie.min.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js
 // @require         https://cdn.jsdelivr.net/npm/dexie-export-import@1.0.0-rc.2/dist/dexie-export-import.min.js
+// @require         https://cdn.jsdelivr.net/npm/js-base64@3.6.0/base64.min.js
 // @run-at          document-idle
 // ==/UserScript==
 
@@ -17,6 +18,9 @@ let db,
     selectedfile,
     currentPage = 0,
     shouldSendEmail = false,
+    emailGAPIReady = false,
+    GAPIClientID = null,
+    GAPIClientKey = null,
     useEmailSecureToken = false,
     maxPages = 99999;
 
@@ -45,7 +49,6 @@ silentAudio.play();
 
 
 function startup() {
-
     let startInterval = setInterval(() => {
         //wait for the notification button to appear (first load)
         if (document.querySelector("div#button.ytd-notification-topbar-button-renderer") == null) {
@@ -57,6 +60,7 @@ function startup() {
         moment.locale(document.querySelector("html").lang);
 
         setupDB().then(result => {
+
             //read settings
             return readSettings();
 
@@ -71,14 +75,21 @@ function startup() {
             //Open notifications panel for scrolling
             document.querySelector("div#button.ytd-notification-topbar-button-renderer").click();
 
-            //Wait for a notification element to appear
+            let waiting = 0;
             let startInterval2 = setInterval(() => {
-                if (document.querySelector('ytd-notification-renderer') != null) {
-                    clearInterval(startInterval2);
+                //Wait for the GAPI if we are using it.
+                if (GAPIClientID == null || emailGAPIReady == true || waiting > 10000) {
+                    
+                    //Wait for any notification element to appear
+                    if (document.querySelector('ytd-notification-renderer') != null) {
+                        clearInterval(startInterval2);
 
-                    //start scrolling through notifications
-                    scrollNotifications();
+                        //start scrolling through notifications
+                        scrollNotifications();
+
+                    }
                 }
+                waiting += 100;
             }, 100);
             return;
 
@@ -1288,13 +1299,13 @@ async function sendEmail(videoDict) {
             if (thescript.innerHTML.indexOf('var ytInitialData = ') != -1) {
                 // Also thescript.innerHTML.match(/window\[\"ytInitialData\"\] = (.*);\n\s*window\[\"ytInitialPlayerResponse/)[1];
                 ytInitialData_PARSED = JSON.parse(thescript.innerHTML.split("var ytInitialData = ")[1].slice(0, -1));
-                
-            }            
+
+            }
 
             // Find ytInitialPlayerResponse...
             if (thescript.innerHTML.indexOf('var ytInitialPlayerResponse = ') != -1) {
                 ytInitialPlayerResponse_PARSED = JSON.parse(thescript.innerHTML.split("var ytInitialPlayerResponse = ")[1].split(";var meta = document.createElement('meta')")[0]);
-                
+
             }
         }
 
@@ -1304,14 +1315,17 @@ async function sendEmail(videoDict) {
         // Handle videoDict.title 
         // DONE Comments should not change their titles.
         if (!videoDict.notvideo) {
-            let newTitle = ytInitialPlayerResponse_PARSED.videoDetails.title || ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[0].videoPrimaryInfoRenderer.title.runs[0].text || html.match(/<meta (property|name)="(og|twitter):title" content="(.*?)">/)[3];
+            let newTitle = ytInitialPlayerResponse_PARSED.videoDetails.title ||
+                ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[0].videoPrimaryInfoRenderer.title.runs[0].text ||
+                html.match(/<meta (property|name)="(og|twitter):title" content="(.*?)">/)[3];
             if (newTitle) {
                 videoDict.title = newTitle;
             }
         }
 
         // Handle channelName
-        let newChannelName = ytInitialPlayerResponse_PARSED.videoDetails.author || ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.ownerChannelName;
+        let newChannelName = ytInitialPlayerResponse_PARSED.videoDetails.author ||
+            ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.ownerChannelName;
         if (newChannelName) {
             channelName = newChannelName;
         }
@@ -1406,11 +1420,24 @@ async function sendEmail(videoDict) {
 
 
     let emailSendResponse;
-    let retryEmail = 99999;
+    let retryEmail = 0;
 
     do {
 
-        if (useEmailSecureToken) {
+        if (emailGAPIReady) {
+
+            emailSendResponse = await emailGAPI.sendMessage(
+                emailSettings[0].value.To,
+                emailSettings[0].value.From,
+                subjectVal,
+                bodyVal
+            ).then(message => {
+                console.log("Email.send response: ");
+                console.log(message);
+                return message;
+            });
+
+        } else if (useEmailSecureToken) {
 
             emailSendResponse = await Email.send({
                 SecureToken: emailSettings[0].value.SecureToken,
@@ -1456,14 +1483,20 @@ async function sendEmail(videoDict) {
 
         //console.log("sendEmail -> emailSendResponse", emailSendResponse);
         //retry sending email up to 3 times
-        if (emailSendResponse != "OK") {
-            if (retryEmail == 99999) {
+        //LATER gmail status text might have to be "SENT" instead
+        console.log("sendEmail -> emailSendResponse BELOW");
+        console.log(emailSendResponse);
+        console.log("sendEmail -> retryEmail", retryEmail);
+        if ((emailSendResponse != "OK") && (emailSendResponse.statusText != "OK")) {
+            if (retryEmail == 0) {
                 retryEmail = 1;
             } else {
                 retryEmail++;
             }
+        } else {
+            retryEmail = 999;
         }
-    } while (retryEmail <= 3);
+    } while (retryEmail <= 2);
 
     return emailSendResponse;
 
@@ -1487,8 +1520,15 @@ async function readSettings() {
                 }
                 shouldSendEmail = emailSettings[0].value.SendEmail;
                 useEmailSecureToken = emailSettings[0].value.UseSecureToken;
+                GAPIClientID = emailSettings[0].value.GAPIid;
+                GAPIClientKey = emailSettings[0].value.GAPIkey;
                 return;
             });
+
+        //load GAPI if they are present
+        if (GAPIClientID && GAPIClientKey) {
+            await emailGAPI.handleClientLoad();
+        }
 
     } catch (error) {
         //console.log(error);
@@ -1501,9 +1541,14 @@ function saveOptionsEmail() {
     shouldSendEmail = document.querySelector("#sendEmailCheckbox").checked;
     useEmailSecureToken = document.querySelector("#useSecureTokenCheckbox").checked;
 
+    GAPIClientID = document.querySelector("#emailGAPIClientID").value;
+    GAPIClientKey = document.querySelector("#emailGAPIClientKey").value;
+
     let settingsDict = {
         key: "email",
         value: {
+            GAPIid: GAPIClientID,
+            GAPIkey: GAPIClientKey,
             Host: document.querySelector("#emailHost").value,
             Username: document.querySelector("#emailUsername").value,
             Password: document.querySelector("#emailPassword").value,
@@ -1523,6 +1568,117 @@ function saveOptionsEmail() {
     });
 }
 
+var emailGAPI = {
+
+    handleClientLoad: async function handleClientLoad() {
+        if (!gapi.auth2) {
+            gapi.load('client:auth2');
+        }
+        emailGAPI.initClient();
+    },
+
+    initClient: async function initClient() {
+        // Client ID and API key
+        var CLIENT_ID = GAPIClientID;
+        var API_KEY = GAPIClientKey;
+
+        // Array of API discovery doc URLs for APIs used by the quickstart
+        var DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest"];
+
+        // Authorization scopes required by the API; multiple scopes can be
+        // included, separated by spaces.
+        var SCOPES = 'https://www.googleapis.com/auth/gmail.send';
+
+        gapi.client.init({
+            apiKey: API_KEY,
+            clientId: CLIENT_ID,
+            discoveryDocs: DISCOVERY_DOCS,
+            scope: SCOPES
+        }).then(function() {
+
+            // Handle the initial sign-in state.
+            emailGAPI.updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+
+            // Listen for sign-in state changes.
+            gapi.auth2.getAuthInstance().isSignedIn.listen(emailGAPI.updateSigninStatus);
+
+        }, function(error) {
+            //LATER errors to the database instead
+            emailGAPIReady = false;
+            console.log(JSON.stringify(error, null, 2));
+        });
+    },
+
+
+    /**
+     *  Called when the signed in status changes, to update the UI
+     *  appropriately. After a sign-in, the API is called.
+     */
+    updateSigninStatus: function updateSigninStatus(isSignedIn) {
+        if (isSignedIn) {
+            emailGAPIReady = true;
+            if (document.querySelector("#notificationOptions") != null) {
+                document.querySelector("#notificationOptions #authButtonEmail").style.display = 'none';
+                document.querySelector("#notificationOptions #signoutButtonEmail").style.display = 'block';
+            }
+        } else {
+            emailGAPIReady = false;
+            if (document.querySelector("#notificationOptions") != null) {
+                document.querySelector("#notificationOptions #authButtonEmail").style.display = 'block';
+                document.querySelector("#notificationOptions #signoutButtonEmail").style.display = 'none';
+            }
+        }
+    },
+
+    /**
+     *  Sign in the user upon button click.
+     */
+    handleAuthClick: async function handleAuthClick(event) {
+
+        GAPIClientID = document.querySelector("#emailGAPIClientID").value;
+        GAPIClientKey = document.querySelector("#emailGAPIClientKey").value;
+        gapi.auth2.getAuthInstance().signIn();
+    },
+
+    /**
+     *  Sign out the user upon button click.
+     */
+    handleSignoutClick: async function handleSignoutClick(event) {
+        gapi.auth2.getAuthInstance().signOut();
+    },
+
+
+    /**
+     * Send Email
+     */
+    sendMessage: async function sendMessage(emailTo, emailFrom, emailSubject, message) {
+
+        //Subject has to be in the following format: Subject: =?utf-8?B?${Base64.encodeURI(emailSubject)}?=
+
+        var rawEmail = `To: ${emailTo}
+From: ${emailFrom}
+Subject: =?utf-8?B?${Base64.encode(emailSubject)}?=
+Content-Type: text/html; charset=UTF-8
+MIME-Version: 1.0
+
+${message}`;
+
+        //We use a Base64 library because btoa does not work for all utf-8 characters
+        rawEmail = Base64.encodeURI(rawEmail);
+
+        var sendRequest = gapi.client.gmail.users.messages.send({
+            'userId': 'me',
+            'resource': {
+                'raw': rawEmail
+            }
+        });
+
+        return sendRequest;
+    }
+
+};
+
+
 function setupNotificationDiv() {
     let innerNotificationsDiv = document.createElement("div");
     let outerNotificationsDiv = document.createElement("div");
@@ -1532,7 +1688,7 @@ function setupNotificationDiv() {
     const divHTML = `
     <div id="sidebuttons">
         <div id="sidebuttonsTop">
-            <!-- TODO fix search functionality, bring "download additional data" button with it (channel names mostly (but we can get the channel names from TITLE???))
+            <!-- LATER fix search functionality, bring "download additional data" button with it (channel names mostly (but we can get the channel names from TITLE???))
             <div id="searchContainer">                
                 <input label="Filter" id="sidebarSearchInput" placeholder="Filter">
                     <paper-icon-button slot="suffix" id="sidebarSearchButton" icon="search" alt="Filter" title="Filter">
@@ -1585,7 +1741,7 @@ function setupNotificationDiv() {
     document.querySelector("#sidebuttons #readtransparencyCheckbox").addEventListener('click', readtransparency);
     document.querySelector("#sidebuttons #commenttransparencyCheckbox").addEventListener('click', commenttransparency);
     document.querySelector("#sidebuttons #displayOptionsButton").addEventListener('click', displayTabbedOptions);
-    //TODO fix search 2
+    //LATER fix search 2
     // document.querySelector("#sidebuttons #sidebarSearchButton").addEventListener('click', sidebarSearch);
     // document.querySelector("#sidebuttons #sidebarSearchInput").addEventListener('keyup', sidebarInputkey);
     return "pagination";
@@ -1693,19 +1849,27 @@ function displayTabbedOptions() {
         </div>
         <div class="tabbed-section-2 hidden">
             <div style="display: flex;flex-direction: column;">
-                <paper-textarea id="emailHost" label="Host (Example: smtp.gmail.com)"></paper-textarea>
-                <paper-textarea id="emailUsername" label="Username (Example: MyUsername or MyUsername@gmail.com)"></paper-textarea>
-                <paper-textarea id="emailPassword" label="Password (Example: MyPassword)"></paper-textarea>
-                <paper-checkbox id="useSecureTokenCheckbox" noink style="--paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Use Security Token Instead (visit smtpjs.com)</paper-checkbox>
-                <paper-textarea id="emailSecureToken" label="Secure Token (Example: C973D7AD-F097-4B95-91F4-40ABC5567812)" disabled></paper-textarea>
+                <paper-textarea id="emailGAPIClientID" label="Client ID (Example: xxxx-xxxxxxxx.apps.googleusercontent.com)"></paper-textarea>
+                <paper-textarea id="emailGAPIClientKey" label="API Key or Secret (Example: xxxxxxxxxxxxxx)"></paper-textarea>
+                <paper-button id="authButtonEmail" raised class="" style="margin-top:14px;margin-bottom:0px;display:none;">AUTHORIZE</paper-button>
+                <paper-button id="signoutButtonEmail" raised class="" style="margin-top:14px;margin-bottom:0px;display:none;">SIGN OUT</paper-button>
+                <paper-textarea id="emailTo" label="To (Example: MyUsername@gmail.com)"></paper-textarea>
                 <paper-textarea id="emailFrom" label="From (Example: MyUsername@gmail.com)"></paper-textarea>
-                <paper-textarea id="emailTo" label="To (Example: myemail@gmail.com)"></paper-textarea>
                 <paper-textarea id="emailSubject" label="Subject (Can use DUMMY values. Example: DUMMYCHANNELNAME has a new video: DUMMYVIDEOTITLE)"></paper-textarea>
                 <paper-textarea id="emailBody" label="Body (Can use HTML as well as DUMMY values.)"></paper-textarea>
                 <h3>❗❗❗ DUMMYVIDEOTITLE, DUMMYVIDEOIMAGEURL, DUMMYVIDEOLENGTH, DUMMYVIDEOURL, DUMMYCHANNELIMAGEURL, DUMMYCHANNELNAME, DUMMYCHANNELURL, DUMMYLIVEICON strings will be replaced by their respective values when an email is sent. Only for the Subject and the Body.</h3>
                 <paper-checkbox id="sendEmailCheckbox" noink style="--paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Send Email on New Notifications</paper-checkbox>
                 <paper-button id="saveButtonEmail" raised class="" style="margin-top:14px;margin-bottom:0px;">SAVE</paper-button>
                 <paper-button id="sendEmailButton" raised class="" style="margin-top:14px;margin-bottom:14px;">SEND TEST EMAILS</paper-button>
+                <paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:8px;">CLOSE</paper-button>
+                <br>
+                <h1 style="margin: 50px auto 30px auto;color: crimson;border: 1px red solid;border-radius: 4px;">Below Options are for SMTPJS. Please Ignore them.</h1>
+                <br>
+                <paper-textarea id="emailHost" label="Host (Example: smtp.gmail.com)"></paper-textarea>
+                <paper-textarea id="emailUsername" label="Username (Example: MyUsername or MyUsername@gmail.com)"></paper-textarea>
+                <paper-textarea id="emailPassword" label="Password (Example: MyPassword)"></paper-textarea>
+                <paper-checkbox id="useSecureTokenCheckbox" noink style="--paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Use Security Token Instead (visit smtpjs.com)</paper-checkbox>
+                <paper-textarea id="emailSecureToken" label="Secure Token (Example: C973D7AD-F097-4B95-91F4-40ABC5567812)" disabled></paper-textarea>
                 <paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:8px;">CLOSE</paper-button>
             </div>
         </div>
@@ -1737,6 +1901,17 @@ function displayTabbedOptions() {
     document.querySelector("#notificationOptions #exportDatabaseButton").addEventListener('click', exportDB);
     document.querySelector("#notificationOptions #importDatabaseButton").addEventListener('click', importDB);
     document.querySelector("#notificationOptions #useSecureTokenCheckbox").addEventListener('click', useTokenCheckboxClicked);
+
+    let authorizeButton = document.querySelector("#notificationOptions #authButtonEmail");
+    let signoutButton = document.querySelector("#notificationOptions #signoutButtonEmail");
+    authorizeButton.addEventListener('click', emailGAPI.handleAuthClick);
+    signoutButton.addEventListener('click', emailGAPI.handleSignoutClick);
+
+    if (emailGAPIReady) {
+        signoutButton.style.display = 'block';
+    } else {
+        authorizeButton.style.display = 'block';
+    }
 
     document.querySelector("#notificationOptions #importinput").addEventListener('change', fileInputOnchange);
 
@@ -1830,6 +2005,9 @@ function displayTabbedOptions() {
                 if (emailSettings == null) {
                     return;
                 }
+
+                document.querySelector("#emailGAPIClientID").value = emailSettings[0].value.GAPIid;
+                document.querySelector("#emailGAPIClientKey").value = emailSettings[0].value.GAPIkey;
                 document.querySelector("#emailHost").value = emailSettings[0].value.Host;
                 document.querySelector("#emailUsername").value = emailSettings[0].value.Username;
                 document.querySelector("#emailPassword").value = emailSettings[0].value.Password;
@@ -1851,4 +2029,15 @@ function displayTabbedOptions() {
     }
 }
 
-startup();
+
+//Load client gapi before anything as it takes some time to load.
+gapi.load('client:auth2');
+let gapiInterval = setInterval(() => {
+    //wait for the gapi to load
+    if (gapi.auth2) {
+        clearInterval(gapiInterval);
+        //Run the regular startup.
+        startup();
+    }
+}, 50);
+//startup();

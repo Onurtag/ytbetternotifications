@@ -18,26 +18,16 @@ ___
 
 * After the first install, clicking the "Load All Notifications" button in the settings menu is recommended.  
 
-* Email feature uses smtpjs.com. ***❗❗❗ Only use a fresh dummy account for this feature and assume that your password and account will be leaked***.   
-
-Email setup example (for sending only to a gmail account from a fresh dummy gmail account):  
+Email setup example (for gmail only):  
 ```
-1. Create a new dummy Gmail account with a random password that you dont use anywhere else
+1. Create a new dummy Gmail account or use your existing account (for extra safety)
 
-2. Enable less secure apps for your new google account (google how)
+2. Go to the link below and Save the "Client ID" and "Secret" (or API key) values
+https://developers.google.com/gmail/api/quickstart/js
 
-3. Go to smtpjs.com, click "Encrypt your SMTP Credentials" and enter the following: 
-    SMTP Host: smtp.gmail.com
-    SMTP Username: your email
-    SMTP Password: your password
-    Domain: *.gmail.com
-    Use SSL: ✔
-    Port: 587
-After entering above settings click generate and save the exported token. You can leave smtpjs.com after getting your token.
+3. Enter those values into the YtBetterNotifications settings menu.
 
-4. Now you can input your token and other email settings into the Youtube Better Notifications options menu. Using the email template below for subject and body fields is recommended.
-
-5. Click "Send test emails" to send test emails to your destination account.
+4. Click "Send test emails" to send test emails to your destination account.
 ```
 
 ___  
