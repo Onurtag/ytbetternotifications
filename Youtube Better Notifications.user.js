@@ -24,6 +24,9 @@ let db,
     useEmailSecureToken = false,
     maxPages = 99999;
 
+ytbnDebugEmail = false;
+console.log("ytbnDebugEmail", ytbnDebugEmail);
+
 let dontSendEmailsOver = 100;
 let itemsperPage = 50;
 let liveTitlePrependString = "🔴 ";
@@ -1291,22 +1294,38 @@ async function sendEmail(videoDict) {
         var parser = new DOMParser();
 
         let emaildoc = parser.parseFromString(html, 'text/html');
+        
+        if (ytbnDebugEmail) {
+            debugger;
+        }
 
         let ytInitialData_PARSED, ytInitialPlayerResponse_PARSED;
         for (let scriptindex = 0; scriptindex < emaildoc.scripts.length; scriptindex++) {
             const thescript = emaildoc.scripts[scriptindex];
-            //DONE: eval() or parse()
+            //LATER: Could use eval() or parse()
+
+            //combined OLD method
+            if (thescript.innerHTML.indexOf('window["ytInitialData"]') != -1) {
+                // Also thescript.innerHTML.match(/window\[\"ytInitialData\"\] = (.*);\n\s*window\[\"ytInitialPlayerResponse/)[1];
+                ytInitialData_PARSED = JSON.parse(thescript.innerHTML.split("window[\"ytInitialData\"] = ")[1].split("ytInitialPlayerResponse")[0].split(";\n")[0]);
+                // Also ... 
+                ytInitialPlayerResponse_PARSED = JSON.parse(thescript.innerHTML.split("window[\"ytInitialPlayerResponse\"] = ")[1].split("window.ytcsi")[0].split(";\n")[0]);
+            }
+
+            //YTinitialdata NEW method
             if (thescript.innerHTML.indexOf('var ytInitialData = ') != -1) {
                 // Also thescript.innerHTML.match(/window\[\"ytInitialData\"\] = (.*);\n\s*window\[\"ytInitialPlayerResponse/)[1];
                 ytInitialData_PARSED = JSON.parse(thescript.innerHTML.split("var ytInitialData = ")[1].slice(0, -1));
 
             }
 
-            // Find ytInitialPlayerResponse...
+            //ytInitialPlayerResponse NEW method
             if (thescript.innerHTML.indexOf('var ytInitialPlayerResponse = ') != -1) {
                 ytInitialPlayerResponse_PARSED = JSON.parse(thescript.innerHTML.split("var ytInitialPlayerResponse = ")[1].split(";var meta = document.createElement('meta')")[0]);
 
             }
+
+
         }
 
         //Get the best possible values from the fetched page.
@@ -1418,6 +1437,9 @@ async function sendEmail(videoDict) {
         bodyVal = bodyVal.replaceAll(key, value);
     }
 
+    if (ytbnDebugEmail) {
+        return "ytbnDebugEmail";
+    }
 
     let emailSendResponse;
     let retryEmail = 0;
