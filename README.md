@@ -20,14 +20,21 @@ ___
 
 Email setup example (for gmail only):  
 ```
-1. Create a new dummy Gmail account or use your existing account (for extra safety)
+1. Create a new dummy Gmail account for this purpose or use your existing account
 
-2. Go to the link below and Save the "Client ID" and "Secret" (or API key) values
+2. Go to the link below and copy the "Client ID" and "Secret" (or API key) values
 https://developers.google.com/gmail/api/quickstart/js
 
-3. Enter those values into the YtBetterNotifications settings menu.
+3. Enter those values into the YtBetterNotifications settings menu. Don't forget to save using the save button below.
 
-4. Click "Send test emails" to send test emails to your destination account.
+4. Go to the link below and click the first "OAuth Client" item (with today's date)
+https://console.developers.google.com/apis/credentials
+Add https://www.youtube.com to the Authorized JavaScript origins list.
+
+5. Copy the email subject and body templates below and paste them into the subject and body fields that are on the YtBetterNotifications settings menu.
+You can modify them as you wish. Don't forget to save using the save button below.
+
+6. Click "Send test emails" to send test emails to your destination account.
 ```
 
 ___  
