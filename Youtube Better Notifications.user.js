@@ -1295,10 +1295,6 @@ async function sendEmail(videoDict) {
 
         let emaildoc = parser.parseFromString(html, 'text/html');
         
-        if (ytbnDebugEmail) {
-            debugger;
-        }
-
         let ytInitialData_PARSED, ytInitialPlayerResponse_PARSED;
         for (let scriptindex = 0; scriptindex < emaildoc.scripts.length; scriptindex++) {
             const thescript = emaildoc.scripts[scriptindex];
