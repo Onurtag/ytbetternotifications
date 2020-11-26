@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            Youtube Better Notifications (Alpha)
 // @namespace       youtube.better.notifications
-// @version         1.1.0
+// @version         1.1.2
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -594,6 +594,7 @@ function displayNotification(currDict) {
     }
 
     //Replace dummy values
+    //LATER Can use ${var}
     elemHTML = elemHTML.replace("ROWDUMMYROW1", col1);
     elemHTML = elemHTML.replace("ROWDUMMYROW2", col2);
     elemHTML = elemHTML.replace("ROWDUMMYROW3", col3);
@@ -648,6 +649,10 @@ async function checkboxReadClicked(event) {
     //console.log(event.target);
     let eventrow = event.target.parentElement.parentElement.parentElement;
     let rowId = eventrow.dataset.id;
+
+    if (rowId == "" || !rowId) {
+        return "Error while reading row ID";
+    }
 
     let readvalue;
     if (event.target.parentElement.checked == true) {
@@ -1286,14 +1291,14 @@ async function sendEmail(videoDict) {
     //This can be seperated into its own function if needed.
     await fetch(videoDict.url).then(function(response) {
         return response.text();
-    }).then(function(html) {
+    }).then(function(newhtml) {
 
-        //raw html
-        //emailhtml = html;
+        //raw html for debug
+        emailhtml = newhtml;
         // Convert the HTML string into a document object
         var parser = new DOMParser();
 
-        let emaildoc = parser.parseFromString(html, 'text/html');
+        let emaildoc = parser.parseFromString(newhtml, 'text/html');
         
         let ytInitialData_PARSED, ytInitialPlayerResponse_PARSED;
         for (let scriptindex = 0; scriptindex < emaildoc.scripts.length; scriptindex++) {
@@ -1331,8 +1336,8 @@ async function sendEmail(videoDict) {
         // DONE Comments should not change their titles.
         if (!videoDict.notvideo) {
             let newTitle = ytInitialPlayerResponse_PARSED.videoDetails.title ||
-                ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[0].videoPrimaryInfoRenderer.title.runs[0].text ||
-                html.match(/<meta (property|name)="(og|twitter):title" content="(.*?)">/)[3];
+                           ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[0].videoPrimaryInfoRenderer.title.runs[0].text ||
+                           newhtml.match(/<meta (property|name)="(og|twitter):title" content="(.*?)">/)[3];
             if (newTitle) {
                 videoDict.title = newTitle;
             }
@@ -1354,6 +1359,10 @@ async function sendEmail(videoDict) {
         let newUserImgUrl = ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[1].videoSecondaryInfoRenderer.owner.videoOwnerRenderer.thumbnail.thumbnails.slice(-1)[0].url.replace(/=s\d.*/, "=s0") || videoDict.userimgurl;
         if (newUserImgUrl) {
             videoDict.userimgurl = newUserImgUrl;
+            //Fix for example: "//yt3.ggpht.com/ytc/AAUvwngNRbQ0wRc8flYiQfOm1FFhLB1aghNa2WJs4uOD=s0"
+            if (videoDict.userimgurl.match(/^\/\/.*?=s0$/)) {
+                videoDict.userimgurl = "https:" + videoDict.userimgurl;
+            }
         }
 
         //handle videoDict.videoimgurl
