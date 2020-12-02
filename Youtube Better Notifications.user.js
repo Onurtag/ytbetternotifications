@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name            Youtube Better Notifications (Alpha)
-// @namespace       youtube.better.notifications
-// @version         1.1.2
+// @name            YtBetterNotifications (Alpha)
+// @namespace       Yt.Better.Notifications
+// @version         1.1.3
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*

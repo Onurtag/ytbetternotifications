@@ -17,7 +17,7 @@ Only tested on **Firefox with Tampermonkey**.
 * After the first install, clicking the **"Load All Notifications"** button in the settings menu is recommended.  
 If you are planning to use email notifications, you should do this step before entering your email information in the settings.
 
-### **Steps to setup your email notifications (for Gmail only)**
+### **Steps to setup your email notifications (for Gmail only):**
 
 *Reminder: Click the **"Load All Notifications"** button before setting up your email notifications.*
 
@@ -67,8 +67,9 @@ Body Template (Click to Expand)
 
 # 📚**Used libraries**  
 
- - Dexie + dexie-export-import
- - downloadjs
- - moment.js  
+ - [Dexie + dexie-export-import](https://github.com/dfahlander/Dexie.js)  
+ - [downloadjs](https://github.com/rndme/download)
+ - [moment.js](https://github.com/moment/moment/)  
+ - [js-base64](https://github.com/dankogai/js-base64/)  
 
 Many thanks to the developers.
