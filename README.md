@@ -10,15 +10,12 @@ Only tested on **Firefox with Tampermonkey**.
 ### Preview Image:  
 ![Preview](/Images/Preview2.png)  
 
-&nbsp;
-
 # **Usage Information**  
 
 * By default, the userscript only runs on the following url:  **```https://www.youtube.com/new```**
 
 * After the first install, clicking the **"Load All Notifications"** button in the settings menu is recommended.  
 If you are planning to use email notifications, you should do this step before entering your email information in the settings.
-___
 
 ### **Steps to setup your email notifications (for Gmail only)**
 
@@ -67,8 +64,6 @@ Body Template (Click to Expand)
 ```
 
 </details>
-
-&nbsp;
 
 # 📚**Used libraries**  
 
