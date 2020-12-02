@@ -1,24 +1,29 @@
-## Youtube Better Notifications (Unsupported Alpha)  
+# YtBetterNotifications (Unsupported Alpha)  
 
-**Youtube Better Notifications is a *userscript* that gives you a better view of your youtube notifications.**
+**YtBetterNotifications (Name inspired from Youtube Better Notifications) is a browser *userscript* that gives you a better view of your youtube notifications.**  
 
 This is an **unsupported project**. *Do not expect any support or new features* except for maybe large bugs or small tweaks.  
 Feel free to fork and take over or use the code in any way.  
 
-Only tested on **Firefox + Tampermonkey**.  
+Only tested on **Firefox with Tampermonkey**.  
 
 ### Preview Image:  
 ![Preview](/Images/Preview2.png)  
 
-___  
+&nbsp;
 
-### **Usage Information**  
+# **Usage Information**  
 
-* By default, the userscript runs only on this url: https://www.youtube.com/new  
+* By default, the userscript only runs on the following url:  **```https://www.youtube.com/new```**
 
-* After the first install, clicking the "Load All Notifications" button in the settings menu is recommended.  
+* After the first install, clicking the **"Load All Notifications"** button in the settings menu is recommended.  
+If you are planning to use email notifications, you should do this step before entering your email information in the settings.
+___
 
-Email setup example (for gmail only):  
+### **Steps to setup your email notifications (for Gmail only)**
+
+*Reminder: Click the **"Load All Notifications"** button before setting up your email notifications.*
+
 ```
 1. Create a new dummy Gmail account for this purpose or use your existing account
 
@@ -37,7 +42,7 @@ You can modify them as you wish. Don't forget to save using the save button belo
 6. Click "Send test emails" to send test emails to your destination account.
 ```
 
-___  
+</details>
 
 ### **Example Email template:**  
 
@@ -63,10 +68,9 @@ Body Template (Click to Expand)
 
 </details>
 
+&nbsp;
 
-___  
-
-### 📚**Used libraries**  
+# 📚**Used libraries**  
 
  - Dexie + dexie-export-import
  - downloadjs
