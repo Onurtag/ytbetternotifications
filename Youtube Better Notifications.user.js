@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.3
+// @version         1.1.4
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -140,7 +140,7 @@ function scrollNotifications(scrolltimes = 1, interval = 250) {
                     scrollcount = length / 20;
                 }
             } catch (error) {
-                console.error(error);
+                console.log("scrolling error:", error);
             }
         } else {
             //scrolling back up to load the missing images
@@ -611,15 +611,17 @@ function displayNotification(currDict) {
 }
 
 async function togglereadAll(event) {
-    //console.error(event.target);
+    //console.log(event.target);
+    let theCheckbox = event.target.closest("paper-checkbox");
+
     var r = confirm("Are you sure?");
     if (r != true) {
-        event.target.parentElement.checked = !event.target.parentElement.checked;
+        theCheckbox.checked = !theCheckbox.checked;
         return;
     }
 
     let readvalue;
-    if (event.target.parentElement.checked == true) {
+    if (theCheckbox.checked == true) {
         readvalue = true;
     } else {
         readvalue = false;
@@ -646,16 +648,17 @@ async function togglereadAll(event) {
 }
 
 async function checkboxReadClicked(event) {
-    //console.log(event.target);
-    let eventrow = event.target.parentElement.parentElement.parentElement;
-    let rowId = eventrow.dataset.id;
+    
+    let eventRow = event.target.closest("div.notificationsRow");
+    let rowId = eventRow.dataset.id;
 
     if (rowId == "" || !rowId) {
+        console.log("Error while reading row ID");
         return "Error while reading row ID";
     }
 
     let readvalue;
-    if (event.target.parentElement.checked == true) {
+    if (eventRow.querySelector("paper-checkbox").checked == true) {
         readvalue = true;
     } else {
         readvalue = false;
@@ -665,10 +668,11 @@ async function checkboxReadClicked(event) {
         "read": readvalue
     }).then(result => {
         if (readvalue) {
-            eventrow.classList.add("notificationRead");
+            eventRow.classList.add("notificationRead");
         } else {
-            eventrow.classList.remove("notificationRead");
+            eventRow.classList.remove("notificationRead");
         }
+        return result;
     }).catch(Dexie.ModifyError, function(e) {
         console.error(e.failures.length + "failed to modify read value");
         throw e;
@@ -1558,7 +1562,7 @@ async function readSettings() {
         }
 
     } catch (error) {
-        //console.log(error);
+        console.log("readSettings error:", error);
     }
 
 }
