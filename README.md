@@ -2,42 +2,43 @@
 
 **YtBetterNotifications (Name inspired from Youtube Better Notifications) is a browser *userscript* that gives you a better view of your youtube notifications.**  
 
+
 This is an **unsupported project**. *Do not expect any support or new features* except for maybe large bugs or small tweaks.  
 Feel free to fork and take over or use the code in any way.  
 
-Only tested on **Firefox with Tampermonkey**.  
+Only tested on Firefox with Tampermonkey.  
 
-### Preview Image:  
+**Install link**  is at the bottom of this readme.  
+
+### **Preview Image:**  
 ![Preview](/Images/Preview2.png)  
 
-# **Usage Information**  
+# 🌟**Usage Information**  
 
 * By default, the userscript only runs on the following url:  **```https://www.youtube.com/new```**
 
 * After the first install, clicking the **"Load All Notifications"** button in the settings menu is recommended.  
-If you are planning to use email notifications, you should do this step before entering your email information in the settings.
+If you are planning to use email notifications, you should do this step **before** doing the email setup steps below.  
 
-### **Steps to setup your email notifications (for Gmail only):**
+### **Steps to setup your email notifications (for Gmail only):**  
 
-*Reminder: Click the **"Load All Notifications"** button before setting up your email notifications.*
+***Reminder**: Click the **"Load All Notifications"** button before setting up your email notifications.*
 
-```
-1. Create a new dummy Gmail account for this purpose or use your existing account
+1. Create a new dummy Gmail account for this purpose (highly suggested) or use your existing account
 
-2. Go to the link below and copy the "Client ID" and "Secret" (or API key) values
-https://developers.google.com/gmail/api/quickstart/js
+2. Go to the link below, Click the "Enable API" buttons and copy the "Client ID" and "Secret" (or API key) values  
+```https://developers.google.com/gmail/api/quickstart/js```
 
-3. Enter those values into the YtBetterNotifications settings menu. Don't forget to save using the save button below.
+3. Enter those values into the YtBetterNotifications settings menu. Don't forget to save using the save button below.  
 
-4. Go to the link below and click the first "OAuth Client" item (with today's date)
-https://console.developers.google.com/apis/credentials
-Add https://www.youtube.com to the Authorized JavaScript origins list.
+4. Go to the link below and click the first "OAuth Client" item (with today's date)  
+```https://console.developers.google.com/apis/credentials```  
+Add ```https://www.youtube.com``` to the Authorized JavaScript origins list.
 
-5. Copy the email subject and body templates below and paste them into the subject and body fields that are on the YtBetterNotifications settings menu.
-You can modify them as you wish. Don't forget to save using the save button below.
+1. Copy the Email **Subject Template** and **Body Template** below and paste them into the subject and body fields that are on the YtBetterNotifications settings menu.
+You can modify them if you wish. Don't forget to save using the save button below.  
 
-6. Click "Send test emails" to send test emails to your destination account.
-```
+6. Click "Send test emails" to send some test emails to your destination account.  
 
 </details>
 
@@ -64,6 +65,14 @@ Body Template (Click to Expand)
 ```
 
 </details>
+
+&nbsp;  
+# 💠**Installation**  
+
+You can install the auto updated version with [**this link**](https://github.com/Onurtag/ytbetternotifications/raw/master/YtBetterNotifications.user.js).  
+
+
+&nbsp;  
 
 # 📚**Used libraries**  
 
