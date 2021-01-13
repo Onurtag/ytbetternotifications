@@ -59,9 +59,6 @@ function startup() {
         }
         clearInterval(startInterval);
 
-        //Set document title
-        document.title = "YtBetterNotifications";
-
         //set moment.js locale
         moment.locale(document.querySelector("html").lang);
 
