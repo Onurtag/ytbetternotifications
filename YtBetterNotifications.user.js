@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.4
+// @version         1.1.5
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -35,10 +35,10 @@ const regexVideoURLtoID = /(.*?(watch.v=|watch_videos.video_ids=)(.*?)($|,.*$))/
 const regexImageURLtoID = /https?:\/\/i.ytimg.com\/(vi|vi_webp)\/(.*?)\/.*?.(jpg|webp)/;
 
 
-//Play an silent audio file to prevent throttling (different files for firefox/chromium)
+//Play a silent audio file to prevent background throttling (different files for firefox/chromium)
 //Might require autoplay to be turned on for the website
-var silentAudio, silentAudioFile;
-var isFirefox = typeof InstallTrigger !== 'undefined';
+let silentAudio, silentAudioFile;
+let isFirefox = typeof InstallTrigger !== 'undefined';
 if (isFirefox == true) {
     silentAudioFile = 'data:audio/ogg;base64,T2dnUwACAAAAAAAAAAAHA8coAAAAAIF47n4BE09wdXNIZWFkAQE0AEAfAAAAAABPZ2dTAAAAAAAAAAAAAAcDxygBAAAAUzJlNAGOT3B1c1RhZ3MNAAAATGF2ZjU1LjMzLjEwMAQAAAAVAAAAYXV0aG9yPUFkdmVudHVyZSBMYW5kFAAAAGFsYnVtPUFkdmVudHVyZSBMYW5kIwAAAHRpdGxlPUVtcHR5IExvb3AgRm9yIEpTIFBlcmZvcm1hbmNlFQAAAGVuY29kZXI9TGF2ZjU1LjMzLjEwME9nZ1MAAFi9AAAAAAAABwPHKAIAAAAyAzleMwoNCgsPCQkMDgwKDA0ODQ0NDAwMDAwMCw4MDQ4LDA0ODAwNDQwLCwoPDgwLCg0MDgsMDAgDQvtgoSdsKEAINjpmG6kyq3UB2fEgCDZ/rdQl7AWg4Ag2dYShfx2/4UHACDZ/ow5omm9mOzA0aJyXCDZ1OLVrIJjzCAVr7b2iKamgCDZ1SDnykImIDYOACDa3TfB0Gr+bWrtGb+AINnUv+ROFBR8zDoAINnVnnsPAbLa6CDZ6sGCGuOv3nlNwCDZ6I3ut9dAaHCqX3wg2XDBwFzhT1bJXG4SgCDZ1SFKCeQWBogMPggg2daDavCMN1fLmYOAINmjtoTkep+3zvsjPCDa5WDHLsGmySt1gCDZ6KI6PqMV1GKI4CDZ2BdGcG3TAu1uACDa9TAnYduSD+H3wCDZ1bhTJjA3kXrTACDU4w/g6h585SxZ0CDZ1oxPBDPDre7gINnVBqj1sCfuTiZIzsAg2dgRZAKiazM0ItQg2dgXiRKSpPCjR/SgINnXJOQWzDETgs/tm4Ag2O4gbz8WYlj2wCDWdjVsms44oglYaCDZ1S85AzQVEE/b83Ag2eW35JDbXlk8eCJfMCDcki/+9RVLZ3O4fCDVey7IEoi5wDZcVCDZ0LF6mtpuWlXG8YAg2V2QIXTjvaCEIOIwINnWjFnyIy+83bLgINnXL0yMgbqjfyAg2uVeivlfw1LfQCDZ1y8XIVqvYVQg2daJgNh1l6Ul2oTOYaAg2doUKwX0fVXOgLHrQCDZ1pGelDVg0sabgCDZC/Z1+dxdRPIwINnQw8kKLxYt5CDZ2BBYNLi6nUoeI4Ag2V5BoAlPMrQ57YAg2dW1ns/tgS0qGpA1ACDZX214nEzghqKQINacJO/rHa02gVEYINleU2/9UWr02NuBPZ2dTAAQwwwAAAAAAAAcDxygDAAAARL86cAEKCAVTo0DgY4cToA==';
     silentAudio = new Audio(silentAudioFile);
@@ -58,6 +58,9 @@ function startup() {
             return;
         }
         clearInterval(startInterval);
+
+        //Set document title
+        document.title = "YtBetterNotifications";
 
         //set moment.js locale
         moment.locale(document.querySelector("html").lang);
@@ -1719,7 +1722,7 @@ function setupNotificationDiv() {
     const divHTML = `
     <div id="sidebuttons">
         <div id="sidebuttonsTop">
-            <!-- LATER fix search functionality, bring "download additional data" button with it (channel names mostly (but we can get the channel names from TITLE???))
+            <!-- TODO add search functionality later (maybe), could add a "download additional data" button with it (channel names mostly (but we can get the channel names from TITLE???))
             <div id="searchContainer">                
                 <input label="Filter" id="sidebarSearchInput" placeholder="Filter">
                     <paper-icon-button slot="suffix" id="sidebarSearchButton" icon="search" alt="Filter" title="Filter">
@@ -1905,7 +1908,7 @@ function displayTabbedOptions() {
             </div>
         </div>
         <div class="tabbed-section-3 hidden">
-            <div style="text-align:center;font-size:14pt;margin-top: auto;margin-bottom: 10px;">Be careful with your exported smtp passwords.</div>
+            <div style="text-align:center;font-size:14pt;margin-top: auto;margin-bottom: 10px;">Be careful with your exported passwords and secrets.</div>
             <paper-button id="exportDatabaseButton" raised class="" style="">EXPORT DATABASE</paper-button>
             <input type="file" id="importinput" name="importinput" accept=".json" style="width:50%;margin-left:auto;margin-right: auto;">
             <paper-button for="importinput" id="importDatabaseButton" class="" style="">IMPORT DATABASE</paper-button>
