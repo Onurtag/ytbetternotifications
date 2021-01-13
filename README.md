@@ -66,13 +66,10 @@ Body Template (Click to Expand)
 
 </details>
 
-&nbsp;  
 # 💠**Installation**  
 
 You can install the auto updated version with [**this link**](https://github.com/Onurtag/ytbetternotifications/raw/master/YtBetterNotifications.user.js).  
 
-
-&nbsp;  
 
 # 📚**Used libraries**  
 
