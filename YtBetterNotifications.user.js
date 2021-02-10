@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.5
+// @version         1.1.6
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -551,7 +551,7 @@ function displayNotification(currDict) {
             ROWDUMMYROW4
         </div>
         <div class="notifRowItem notcol5">
-            <paper-checkbox noink READCHECKED>Read</paper-checkbox>
+            <tp-yt-paper-checkbox noink READCHECKED>Read</tp-yt-paper-checkbox>
         </div>
     </div>
     `;
@@ -607,12 +607,12 @@ function displayNotification(currDict) {
     elemDiv.outerHTML = elemHTML;
 
     //add read checkbox click event
-    document.querySelector(".notificationsRow:last-of-type paper-checkbox").addEventListener('click', checkboxReadClicked);
+    document.querySelector(".notificationsRow:last-of-type tp-yt-paper-checkbox").addEventListener('click', checkboxReadClicked);
 }
 
 async function togglereadAll(event) {
     //console.log(event.target);
-    let theCheckbox = event.target.closest("paper-checkbox");
+    let theCheckbox = event.target.closest("tp-yt-paper-checkbox");
 
     var r = confirm("Are you sure?");
     if (r != true) {
@@ -642,7 +642,7 @@ async function togglereadAll(event) {
         } else {
             element.classList.remove("notificationRead");
         }
-        element.querySelector("paper-checkbox").checked = readvalue;
+        element.querySelector("tp-yt-paper-checkbox").checked = readvalue;
     });
     return;
 }
@@ -658,7 +658,7 @@ async function checkboxReadClicked(event) {
     }
 
     let readvalue;
-    if (eventRow.querySelector("paper-checkbox").checked == true) {
+    if (eventRow.querySelector("tp-yt-paper-checkbox").checked == true) {
         readvalue = true;
     } else {
         readvalue = false;
@@ -865,16 +865,16 @@ function addStyles() {
         object-fit: scale-down;
     }
 
-    #sidebuttons paper-checkbox {
+    #sidebuttons tp-yt-paper-checkbox {
         min-height: 25px;
         margin-bottom: 0.5em;
     }
 
-    #outerNotifications paper-checkbox {
+    #outerNotifications tp-yt-paper-checkbox {
         font-size: .85em;
         margin-left: 14px;
     }
-    #outerNotifications paper-checkbox #checkboxLabel {
+    #outerNotifications tp-yt-paper-checkbox #checkboxLabel {
         color: #ddd;
         width: 66%;
         padding-left: 10px;
@@ -1729,24 +1729,24 @@ function setupNotificationDiv() {
             -->
             <div id="livesideButtons" style="border: 2px #3EA6FF44 solid;border-radius: 8px;margin: 0px 8px 6px 8px;">
                 <div style="position: absolute;margin: -12px 0px 0px 24px;font-size: 10pt;background: #151515;padding: 1px;">Livestreams</div>
-                <paper-checkbox style="margin-top: calc(0.5em + 4px);" id="hideliveCheckbox" noink>Hide</paper-checkbox>
-                <paper-checkbox style="" id="livetransparencyCheckbox" noink checked>Opacity</paper-checkbox>
+                <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px);" id="hideliveCheckbox" noink>Hide</tp-yt-paper-checkbox>
+                <tp-yt-paper-checkbox style="" id="livetransparencyCheckbox" noink checked>Opacity</tp-yt-paper-checkbox>
             </div>
             <div id="readsideButtons" style="border: 2px #3EA6FF44 solid;border-radius: 8px;margin: 8px 8px 6px 8px;">
                 <div style="position: absolute;margin: -12px 0px 0px 24px;font-size: 10pt;background: #151515;padding: 1px;">Read</div>
-                <paper-checkbox style="margin-top: calc(0.5em + 4px);" id="hidereadCheckbox" noink>Hide</paper-checkbox>
-                <paper-checkbox style="" id="readtransparencyCheckbox" noink checked>Opacity</paper-checkbox>
+                <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px);" id="hidereadCheckbox" noink>Hide</tp-yt-paper-checkbox>
+                <tp-yt-paper-checkbox style="" id="readtransparencyCheckbox" noink checked>Opacity</tp-yt-paper-checkbox>
             </div>
             <div id="commentsideButtons" style="border: 2px #3EA6FF44 solid;border-radius: 8px;margin: 8px 8px 6px 8px;">
                 <div style="position: absolute;margin: -12px 0px 0px 24px;font-size: 10pt;background: #151515;padding: 1px;">Comments</div>
-                <paper-checkbox style="margin-top: calc(0.5em + 4px);" id="hiderepliesCheckbox" noink">Hide</paper-checkbox>
-                <paper-checkbox style="" id="commenttransparencyCheckbox" noink checked>Opacity</paper-checkbox>
+                <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px);" id="hiderepliesCheckbox" noink">Hide</tp-yt-paper-checkbox>
+                <tp-yt-paper-checkbox style="" id="commenttransparencyCheckbox" noink checked>Opacity</tp-yt-paper-checkbox>
             </div>
             
         </div>
         <div id="sidebuttonsBottom">
             <paper-button id="displayOptionsButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 1em 12px;">SETTINGS</paper-button>
-            <paper-checkbox style="margin-top: 2em; margin-left: 24px;" id="readallCheckbox" noink>Toggle All Read/Unread</paper-checkbox>
+            <tp-yt-paper-checkbox style="margin-top: 2em; margin-left: 24px;" id="readallCheckbox" noink>Toggle All Read/Unread</tp-yt-paper-checkbox>
         </div>
     </div>
     <div id="loadindicator" style="top: 43%;left: 46%;position: absolute;">
@@ -1889,7 +1889,7 @@ function displayTabbedOptions() {
                 <paper-textarea id="emailSubject" label="Subject (Can use DUMMY values. Example: DUMMYCHANNELNAME has a new video: DUMMYVIDEOTITLE)"></paper-textarea>
                 <paper-textarea id="emailBody" label="Body (Can use HTML as well as DUMMY values.)"></paper-textarea>
                 <h3>❗❗❗ DUMMYVIDEOTITLE, DUMMYVIDEOIMAGEURL, DUMMYVIDEOLENGTH, DUMMYVIDEOURL, DUMMYCHANNELIMAGEURL, DUMMYCHANNELNAME, DUMMYCHANNELURL, DUMMYLIVEICON strings will be replaced by their respective values when an email is sent. Only for the Subject and the Body.</h3>
-                <paper-checkbox id="sendEmailCheckbox" noink style="--paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Send Email on New Notifications</paper-checkbox>
+                <tp-yt-paper-checkbox id="sendEmailCheckbox" noink style="--tp-yt-paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Send Email on New Notifications</tp-yt-paper-checkbox>
                 <paper-button id="saveButtonEmail" raised class="" style="margin-top:14px;margin-bottom:0px;">SAVE</paper-button>
                 <paper-button id="sendEmailButton" raised class="" style="margin-top:14px;margin-bottom:14px;">SEND TEST EMAILS</paper-button>
                 <paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:8px;">CLOSE</paper-button>
@@ -1899,7 +1899,7 @@ function displayTabbedOptions() {
                 <paper-textarea id="emailHost" label="Host (Example: smtp.gmail.com)"></paper-textarea>
                 <paper-textarea id="emailUsername" label="Username (Example: MyUsername or MyUsername@gmail.com)"></paper-textarea>
                 <paper-textarea id="emailPassword" label="Password (Example: MyPassword)"></paper-textarea>
-                <paper-checkbox id="useSecureTokenCheckbox" noink style="--paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Use Security Token Instead (visit smtpjs.com)</paper-checkbox>
+                <tp-yt-paper-checkbox id="useSecureTokenCheckbox" noink style="--tp-yt-paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Use Security Token Instead (visit smtpjs.com)</tp-yt-paper-checkbox>
                 <paper-textarea id="emailSecureToken" label="Secure Token (Example: C973D7AD-F097-4B95-91F4-40ABC5567812)" disabled></paper-textarea>
                 <paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:8px;">CLOSE</paper-button>
             </div>
