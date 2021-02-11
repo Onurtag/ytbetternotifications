@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.6
+// @version         1.1.7
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -1811,7 +1811,7 @@ async function setupPaginationButtons() {
     let pagingButtonsDiv = document.createElement("div");
     let divHTML = `
     <div id="pagingButtons">
-        <div class="notifRowItem" style="flex-grow: 0.7;">
+        <div class="notifRowItem" style="flex-grow: 0.8;">
             <paper-button id="firstpageButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 12px 12px;">First Page</paper-button>
         </div>
         <div class="notifRowItem" style="flex-grow: 1;">
@@ -1829,7 +1829,7 @@ async function setupPaginationButtons() {
         </div>
         <div class="notifRowItem" style="flex-grow: 1;">
         </div>
-        <div class="notifRowItem" style="flex-grow: 0.7;">
+        <div class="notifRowItem" style="flex-grow: 0.8;">
             <paper-button id="lastpageButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 12px 12px;">Last Page</paper-button>
         </div>
     </div>
