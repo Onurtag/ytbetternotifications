@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.7
+// @version         1.1.8
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -27,13 +27,17 @@ let db,
 ytbnDebugEmail = false;
 console.log("ytbnDebugEmail", ytbnDebugEmail);
 
-let dontSendEmailsOver = 100;
+let dontSendEmailsOver = 150;
 let itemsperPage = 50;
 let liveTitlePrependString = "🔴 ";
 
 const regexVideoURLtoID = /(.*?(watch.v=|watch_videos.video_ids=)(.*?)($|,.*$))/;
 const regexImageURLtoID = /https?:\/\/i.ytimg.com\/(vi|vi_webp)\/(.*?)\/.*?.(jpg|webp)/;
 
+/*
+TODO: Increment Version Number
+
+*/
 
 //Play a silent audio file to prevent background throttling (different files for firefox/chromium)
 //Might require autoplay to be turned on for the website
@@ -82,7 +86,7 @@ function startup() {
             let startInterval2 = setInterval(() => {
                 //Wait for the GAPI if we are using it.
                 if (GAPIClientID == null || emailGAPIReady == true || waiting > 10000) {
-                    
+
                     //Wait for any notification element to appear
                     if (document.querySelector('ytd-notification-renderer') != null) {
                         clearInterval(startInterval2);
@@ -348,6 +352,16 @@ function lastPage(event) {
         setupPaginationButtons();
         return result;
     });
+}
+
+function discardLogs(event) {
+    var r = confirm("Are you sure?");
+    if (r != true) {
+        return;
+    }
+    db.logs.clear();
+    //setupdb is not needed
+    setupDB();
 }
 
 function discardNotifications(event) {
@@ -648,7 +662,7 @@ async function togglereadAll(event) {
 }
 
 async function checkboxReadClicked(event) {
-    
+
     let eventRow = event.target.closest("div.notificationsRow");
     let rowId = eventRow.dataset.id;
 
@@ -1303,7 +1317,7 @@ async function sendEmail(videoDict) {
         var parser = new DOMParser();
 
         let emaildoc = parser.parseFromString(newhtml, 'text/html');
-        
+
         let ytInitialData_PARSED, ytInitialPlayerResponse_PARSED;
         for (let scriptindex = 0; scriptindex < emaildoc.scripts.length; scriptindex++) {
             const thescript = emaildoc.scripts[scriptindex];
@@ -1339,50 +1353,85 @@ async function sendEmail(videoDict) {
         // Handle videoDict.title 
         // DONE Comments should not change their titles.
         if (!videoDict.notvideo) {
-            let newTitle = ytInitialPlayerResponse_PARSED.videoDetails.title ||
-                           ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[0].videoPrimaryInfoRenderer.title.runs[0].text ||
-                           newhtml.match(/<meta (property|name)="(og|twitter):title" content="(.*?)">/)[3];
-            if (newTitle) {
-                videoDict.title = newTitle;
+
+            try {
+
+                let newTitle = ytInitialPlayerResponse_PARSED.videoDetails.title ||
+                    ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[0].videoPrimaryInfoRenderer.title.runs[0].text ||
+                    newhtml.match(/<meta (property|name)="(og|twitter):title" content="(.*?)">/)[3];
+                if (newTitle) {
+                    videoDict.title = newTitle;
+                }
+            } catch (error) {
+                console.warn(error);
             }
+
+
         }
 
         // Handle channelName
-        let newChannelName = ytInitialPlayerResponse_PARSED.videoDetails.author ||
-            ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.ownerChannelName;
-        if (newChannelName) {
-            channelName = newChannelName;
+        try {
+
+            let newChannelName = ytInitialPlayerResponse_PARSED.videoDetails.author ||
+                ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.ownerChannelName;
+            if (newChannelName) {
+                channelName = newChannelName;
+            }
+        } catch (error) {
+            console.warn(error);
         }
 
         // Handle video length
-        vidLength = ytInitialPlayerResponse_PARSED.videoDetails.lengthSeconds || ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.lengthSeconds;
-        //format vid length from seconds
-        vidLength = moment.utc(vidLength * 1000).format('HH:mm:ss').replace(/^(00:)/, "");
+        try {
+
+            vidLength = ytInitialPlayerResponse_PARSED.videoDetails.lengthSeconds || ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.lengthSeconds;
+            //format vid length from seconds
+            vidLength = moment.utc(vidLength * 1000).format('HH:mm:ss').replace(/^(00:)/, "");
+
+        } catch (error) {
+            console.warn(error);
+        }
 
         //handle userimgurl
-        let newUserImgUrl = ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[1].videoSecondaryInfoRenderer.owner.videoOwnerRenderer.thumbnail.thumbnails.slice(-1)[0].url.replace(/=s\d.*/, "=s0") || videoDict.userimgurl;
-        if (newUserImgUrl) {
-            videoDict.userimgurl = newUserImgUrl;
-            //Fix for example: "//yt3.ggpht.com/ytc/AAUvwngNRbQ0wRc8flYiQfOm1FFhLB1aghNa2WJs4uOD=s0"
-            if (videoDict.userimgurl.match(/^\/\/.*?=s0$/)) {
-                videoDict.userimgurl = "https:" + videoDict.userimgurl;
+        try {
+
+            let newUserImgUrl = ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[1].videoSecondaryInfoRenderer.owner.videoOwnerRenderer.thumbnail.thumbnails.slice(-1)[0].url.replace(/=s\d.*/, "=s0") || videoDict.userimgurl;
+            if (newUserImgUrl) {
+                videoDict.userimgurl = newUserImgUrl;
+                //Fix for example: "//yt3.ggpht.com/ytc/AAUvwngNRbQ0wRc8flYiQfOm1FFhLB1aghNa2WJs4uOD=s0"
+                if (videoDict.userimgurl.match(/^\/\/.*?=s0$/)) {
+                    videoDict.userimgurl = "https:" + videoDict.userimgurl;
+                }
             }
+        } catch (error) {
+            console.warn(error);
         }
 
         //handle videoDict.videoimgurl
-        let newVideoImgUrl = ytInitialPlayerResponse_PARSED.videoDetails.thumbnail.thumbnails.slice(-1)[0].url || ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.thumbnail.thumbnails[0].url || videoDict.videoimgurl;
-        if (newVideoImgUrl) {
-            videoDict.videoimgurl = newVideoImgUrl;
+        try {
+
+            let newVideoImgUrl = ytInitialPlayerResponse_PARSED.videoDetails.thumbnail.thumbnails.slice(-1)[0].url || ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.thumbnail.thumbnails[0].url || videoDict.videoimgurl;
+            if (newVideoImgUrl) {
+                videoDict.videoimgurl = newVideoImgUrl;
+            }
+        } catch (error) {
+            console.warn(error);
         }
 
         // Handle channel url
-        channelURL = ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.ownerProfileUrl;
-        if (channelURL == null) {
-            if (ytInitialPlayerResponse_PARSED.videoDetails.channelId != null) {
-                channelURL = "https://www.youtube.com/channel/" + ytInitialPlayerResponse_PARSED.videoDetails.channelId;
+        try {
+
+            channelURL = ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.ownerProfileUrl;
+            if (channelURL == null) {
+                if (ytInitialPlayerResponse_PARSED.videoDetails.channelId != null) {
+                    channelURL = "https://www.youtube.com/channel/" + ytInitialPlayerResponse_PARSED.videoDetails.channelId;
+                }
             }
+            return;
+
+        } catch (error) {
+            console.warn(error);
         }
-        return;
 
     }).catch(function(err) {
         // There was an error
@@ -1546,7 +1595,7 @@ async function readSettings() {
             .where('key')
             .equals("email")
             .toArray().then(emailSettings => {
-                if (emailSettings == null) {
+                if (emailSettings == null || emailSettings.length < 1) {
                     return;
                 }
                 shouldSendEmail = emailSettings[0].value.SendEmail;
@@ -1912,7 +1961,8 @@ function displayTabbedOptions() {
             <br>
             <br>
             <br>
-            <paper-button id="discardNotificationsButton" raised class="" style="margin-top:auto;">CLEAR ALL NOTIFICATIONS</paper-button>
+            <paper-button id="discardLogsButton" raised class="" style="margin-top:auto;">CLEAR ALL LOGS</paper-button>
+            <paper-button id="discardNotificationsButton" raised class="" style="margin-top:50px;">CLEAR ALL NOTIFICATIONS</paper-button>
             <paper-button id="discardSettingsButton" raised class="" style="margin-top:12px;">CLEAR ALL SETTINGS</paper-button>
             <paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:0px;">CLOSE</paper-button>
         </div>
@@ -1925,6 +1975,7 @@ function displayTabbedOptions() {
     document.querySelector("#notificationOptions #importinput").outerHTML = document.querySelector("#notificationOptions #importinput").outerHTML.replace("<input", "<paper-input");
 
     document.querySelector("#notificationOptions #discardNotificationsButton").addEventListener('click', discardNotifications);
+    document.querySelector("#notificationOptions #discardLogsButton").addEventListener('click', discardLogs);
     document.querySelector("#notificationOptions #discardSettingsButton").addEventListener('click', discardSettings);
     document.querySelector("#notificationOptions #saveButtonEmail").addEventListener('click', saveOptionsEmail);
     document.querySelector("#notificationOptions #loadallButton").addEventListener('click', loadAll);
