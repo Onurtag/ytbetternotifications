@@ -7,9 +7,9 @@
 // @match           https://www.youtube.com/new*
 // @grant           none
 // @require         https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js
-// @require         https://cdnjs.cloudflare.com/ajax/libs/dexie/3.0.2/dexie.min.js
+// @require         https://cdnjs.cloudflare.com/ajax/libs/dexie/3.0.3/dexie.min.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js
-// @require         https://cdn.jsdelivr.net/npm/dexie-export-import@1.0.0-rc.2/dist/dexie-export-import.min.js
+// @require         https://cdn.jsdelivr.net/npm/dexie-export-import@1.0.0/dist/dexie-export-import.min.js
 // @require         https://cdn.jsdelivr.net/npm/js-base64@3.6.0/base64.min.js
 // @run-at          document-idle
 // ==/UserScript==
