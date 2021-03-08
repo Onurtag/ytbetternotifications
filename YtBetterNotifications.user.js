@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.8
+// @version         1.1.9
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -23,6 +23,9 @@ let db,
     GAPIClientKey = null,
     useEmailSecureToken = false,
     maxPages = 99999;
+
+const MAX_LOG_SIZE = 600,
+    LOG_PURGE_AMOUNT = 100;
 
 ytbnDebugEmail = false;
 console.log("ytbnDebugEmail", ytbnDebugEmail);
@@ -105,6 +108,8 @@ function startup() {
 }
 
 function scrollNotifications(scrolltimes = 1, interval = 250) {
+    
+    cleanLogsOverQuota();
 
     //Play silent audio
     silentAudio.play();
@@ -1236,6 +1241,25 @@ function testEmail() {
     });
 }
 
+async function cleanLogsOverQuota() {
+    let logSize = await db.logs
+                .count();
+
+    //Check if the amount of logs are over the quota
+    if (logSize >= MAX_LOG_SIZE) {
+        //Delete the first xxx logs
+        let purgedLogs = await db.logs
+                    .orderBy("number")
+                    .offset(0).limit(LOG_PURGE_AMOUNT)
+                    .delete();
+        console.log("🚀 ~ cleanLogsOverQuota ~ Purged logs over quota - ", purgedLogs);
+        return;
+    } else {
+        return;
+    }
+
+}
+
 async function sendEmailBatch(videoDictArray) {
 
     if (videoDictArray.length > dontSendEmailsOver) {
@@ -1245,6 +1269,9 @@ async function sendEmailBatch(videoDictArray) {
     if (videoDictArray.length == 0) {
         return;
     }
+
+    //Purge some email logs if we have too many.
+    cleanLogsOverQuota();
 
     //console.log("sendEmailBatch -> videoDictArray", videoDictArray);
 
@@ -1279,12 +1306,13 @@ async function sendEmailBatch(videoDictArray) {
     let emailBatchSize = 4;
     for (let i = 0; i < emailSendArray.length; i += emailBatchSize) {
 
-        //Not async
-        const emailBatch = emailSendArray.slice(i, i + emailBatchSize).map((videoDict) => {
-            return sendEmail(videoDict)
-                .catch(e => {
-                    console.log(`Error in sending email for ${videoDict} - ${e}`);
-                });
+        //Send single email
+        const emailBatch = emailSendArray.slice(i, i + emailBatchSize).map(async (videoDict) => {
+            try {
+                return sendEmail(videoDict);
+            } catch (e) {
+                console.log(`Error in sending email for ${videoDict} - ${e}`);
+            }
         });
 
         await Promise.all(emailBatch)
@@ -1564,10 +1592,11 @@ async function sendEmail(videoDict) {
         //console.log("sendEmail -> emailSendResponse", emailSendResponse);
         //retry sending email up to 3 times
         //LATER gmail status text might have to be "SENT" instead
-        console.log("sendEmail -> emailSendResponse BELOW");
-        console.log(emailSendResponse);
-        console.log("sendEmail -> retryEmail", retryEmail);
+        //These are loggend in the above dict anyways
+        //console.log("sendEmail -> emailSendResponse BELOW");
+        //console.log(emailSendResponse);
         if ((emailSendResponse != "OK") && (emailSendResponse.statusText != "OK")) {
+            console.log("sendEmail -> retryEmail", retryEmail);
             if (retryEmail == 0) {
                 retryEmail = 1;
             } else {
