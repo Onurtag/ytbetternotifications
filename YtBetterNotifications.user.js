@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.9
+// @version         1.1.10
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -22,6 +22,7 @@ let db,
     GAPIClientID = null,
     GAPIClientKey = null,
     useEmailSecureToken = false,
+    useRelativeTime = false,
     maxPages = 99999;
 
 const MAX_LOG_SIZE = 600,
@@ -584,7 +585,11 @@ function displayNotification(currDict) {
     col1 = '<img src="' + currDict.userimgurl + '"></img>';
 
     //time
-    col3 = moment(currDict.time).fromNow();
+    if (useRelativeTime) {
+        col3 = moment(currDict.time).fromNow();
+    } else {
+        col3 = moment(currDict.time).format('lll');
+    }
 
     //title
     if (currDict.live) {
@@ -863,6 +868,7 @@ function addStyles() {
 
     .notcol1 {
         flex-grow: 0.9;
+        margin-left: 0px;
     }
     .notcol2 {
         flex-grow: 3;
@@ -870,12 +876,14 @@ function addStyles() {
     .notcol3 {
         text-align: center;
         flex-grow: .8;
+        margin-left: 6px;
     }
     .notcol4 {
         flex-grow: 1;
     }
     .notcol5 {
         flex-grow: 0.7;
+        margin-right: 0px;
     }
 
     .notifRowItem img, .notifRowItem > a.nvimgc {
@@ -895,7 +903,7 @@ function addStyles() {
     }
     #outerNotifications tp-yt-paper-checkbox #checkboxLabel {
         color: #ddd;
-        width: 66%;
+        /*width: 66%;*/
         padding-left: 10px;
     }
 
@@ -1619,7 +1627,7 @@ async function sendEmail(videoDict) {
 async function readSettings() {
 
     try {
-        //read email options (only the ones needed)
+        //read email settings (only the ones needed)
         await db.settings
             .where('key')
             .equals("email")
@@ -1634,6 +1642,19 @@ async function readSettings() {
                 return;
             });
 
+        //read main options
+        await db.settings
+            .where('key')
+            .equals("options")
+            .toArray().then(options => {
+                if (options == null || options.length < 1) {
+                    return;
+                }
+
+                useRelativeTime = options[0].value.UseRelativeTime;
+                return;
+            });
+
         //load GAPI if they are present
         if (GAPIClientID && GAPIClientKey) {
             await emailGAPI.handleClientLoad();
@@ -1643,6 +1664,23 @@ async function readSettings() {
         console.log("readSettings error:", error);
     }
 
+}
+
+function saveOptions() {
+
+    relativeTimeCheckbox = document.querySelector("#optionRelativeTimeCheckbox").checked;
+
+    let settingsDict = {
+        key: "options",
+        value: {
+            UseRelativeTime: relativeTimeCheckbox,
+        },
+        extra: "",
+    };
+
+    db.settings.put(settingsDict).then(result => {
+        return result;
+    });
 }
 
 function saveOptionsEmail() {
@@ -1941,6 +1979,8 @@ function displayTabbedOptions() {
 
     let optionsDiv = document.createElement("div");
     optionsDiv.id = "notificationOptions";
+    //Hide the options menu for now
+    optionsDiv.style.visibility = false;
 
     const optionsHTML = `
     <div id="backgroundOverlay"></div>
@@ -1954,7 +1994,9 @@ function displayTabbedOptions() {
 
         <div class="tabbed-section-1 visible">
             <paper-button id="loadallButton" raised class="" style="margin-top:auto;">LOAD ALL NOTIFICATIONS</paper-button>
-            <paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:0px;">CLOSE</paper-button>
+            <tp-yt-paper-checkbox id="optionRelativeTimeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size:54px;font-size: 12pt;margin: 50px auto 5px auto;">Display relative time</tp-yt-paper-checkbox>
+            <paper-button id="saveButtonOptions" raised class="" style="margin-top:auto;margin-bottom:0px;">SAVE</paper-button>
+            <paper-button class="closeButtonSettings" raised class="" style="margin-top:14px;margin-bottom:0px;">CLOSE</paper-button>
         </div>
         <div class="tabbed-section-2 hidden">
             <div style="display: flex;flex-direction: column;">
@@ -2007,11 +2049,13 @@ function displayTabbedOptions() {
     document.querySelector("#notificationOptions #discardLogsButton").addEventListener('click', discardLogs);
     document.querySelector("#notificationOptions #discardSettingsButton").addEventListener('click', discardSettings);
     document.querySelector("#notificationOptions #saveButtonEmail").addEventListener('click', saveOptionsEmail);
-    document.querySelector("#notificationOptions #loadallButton").addEventListener('click', loadAll);
     document.querySelector("#notificationOptions #sendEmailButton").addEventListener('click', testEmail);
     document.querySelector("#notificationOptions #exportDatabaseButton").addEventListener('click', exportDB);
     document.querySelector("#notificationOptions #importDatabaseButton").addEventListener('click', importDB);
     document.querySelector("#notificationOptions #useSecureTokenCheckbox").addEventListener('click', useTokenCheckboxClicked);
+
+    document.querySelector("#notificationOptions #saveButtonOptions").addEventListener('click', saveOptions);
+    document.querySelector("#notificationOptions #loadallButton").addEventListener('click', loadAll);
 
     let authorizeButton = document.querySelector("#notificationOptions #authButtonEmail");
     let signoutButton = document.querySelector("#notificationOptions #signoutButtonEmail");
@@ -2109,6 +2153,7 @@ function displayTabbedOptions() {
 
     //load settings into the inputs
     try {
+        //Load email tab
         db.settings
             .where('key')
             .equals("email")
@@ -2135,9 +2180,27 @@ function displayTabbedOptions() {
                 useTokenCheckboxClicked();
                 return;
             });
+
+        //Load main options tab
+        db.settings
+            .where('key')
+            .equals("options")
+            .toArray().then(options => {
+                if (options == null) {
+                    return;
+                }
+
+                useRelativeTime = options[0].value.UseRelativeTime;
+                document.querySelector("#optionRelativeTimeCheckbox").checked = useRelativeTime;
+                return;
+            });
+
     } catch (error) {
         console.log("displayTabbedOptions -> error", error);
     }
+
+    //Finally, unhide the options menu
+    optionsDiv.style.visibility = true;
 }
 
 
