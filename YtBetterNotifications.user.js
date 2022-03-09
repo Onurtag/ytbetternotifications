@@ -1,16 +1,17 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.11
+// @version         1.1.13
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
+// @match           https://www.youtube.com/reporthistory*
 // @grant           none
 // @require         https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment-with-locales.min.js
-// @require         https://cdnjs.cloudflare.com/ajax/libs/dexie/3.0.3/dexie.min.js
-// @require         https://cdnjs.cloudflare.com/ajax/libs/downloadjs/1.4.8/download.min.js
-// @require         https://cdn.jsdelivr.net/npm/dexie-export-import@1.0.0/dist/dexie-export-import.min.js
-// @require         https://cdn.jsdelivr.net/npm/js-base64@3.6.0/base64.min.js
+// @require         https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.1/dexie.min.js
+// @require         https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js
+// @require         https://cdn.jsdelivr.net/npm/dexie-export-import@1.0.3/dist/dexie-export-import.min.js
+// @require         https://cdn.jsdelivr.net/npm/js-base64@3.7.2/base64.min.js
 // @run-at          document-idle
 // ==/UserScript==
 
@@ -40,8 +41,14 @@ const regexImageURLtoID = /https?:\/\/i.ytimg.com\/(vi|vi_webp)\/(.*?)\/.*?.(jpg
 
 /*
 TODO: Increment Version Number
+TODO: Add a blocking fullscreen div to protect the native notifications popup window while its loading pages.
+TODO: Finish status box or detect email errors in some other way. Start logging email attempts right after adding the url to the db (or something similar)
+TODO: Add a "Saved!" popup when you click save
+
+TODO (Maybe later): switch moment.js with a better library
 
 */
+
 
 //Play a silent audio file to prevent background throttling (different files for firefox/chromium)
 //Might require autoplay to be turned on for the website
@@ -109,7 +116,7 @@ function startup() {
 }
 
 function scrollNotifications(scrolltimes = 2, interval = 250) {
-    
+
     cleanLogsOverQuota();
 
     //Play silent audio
@@ -229,7 +236,7 @@ async function exportDB(event) {
             prettyJson: true,
             progressCallback
         });
-        download(blob, "ytbetternotifications-export.json", "application/json");
+        saveAs(blob, "ytbetternotifications-export.json");
     } catch (error) {
         console.error('File export error: ' + error);
     }
@@ -489,8 +496,8 @@ async function saveNotifications() {
             notvideo: notVideo,
         };
 
-        // detect duplications
-        //hash the combination of url+title(comment)+userimgurl
+        //detect duplications
+        //concenate "url + userimgurl + title(comment)" strings and hash the result
         currDict.hash = await digestToSHA256(currDict.url + currDict.userimgurl + currDict.title);
 
         //duplicate check using hash
@@ -638,7 +645,7 @@ async function togglereadAll(event) {
     //console.log(event.target);
     let theCheckbox = event.target.closest("tp-yt-paper-checkbox");
 
-    var r = confirm("Are you sure?");
+    var r = confirm("Are you sure? This can not be undone! (unless you export your notifications)");
     if (r != true) {
         theCheckbox.checked = !theCheckbox.checked;
         return;
@@ -770,7 +777,7 @@ function addStyles() {
         width: 75%;
         height: 75%;
         border-radius: 15px;
-        z-index: 345;
+        z-index: 2201;
         top: 50%;
         left: 50%;
         /*transform: translate(-50%, -50%);*/
@@ -940,6 +947,22 @@ function addStyles() {
         width: 16%;
         color: rgba(255, 255, 255, 0.45);
     }
+
+    /* status (default is error) */
+    .ytb-status {
+        border: 1px #f03737f2 solid;
+        font-size: .8em;
+        text-align: center;
+        margin: 12px 12px 1em 12px;
+        border-radius: 3px;
+        padding: 6px;
+        color: #ff6f6f;
+    }
+
+    .ytb-status-hidden {
+        visibility: hidden;
+    }
+
     `;
     document.head.append(newstyle);
 
@@ -947,6 +970,10 @@ function addStyles() {
     newstyle = document.createElement("style");
     newstyle.id = "tabbedoptionscss";
     newstyle.innerHTML = `
+
+    .hideSMTPJS {
+        display: none;
+    }
 
     #backgroundOverlay {
         position: fixed;
@@ -1251,15 +1278,15 @@ function testEmail() {
 
 async function cleanLogsOverQuota() {
     let logSize = await db.logs
-                .count();
+        .count();
 
     //Check if the amount of logs are over the quota
     if (logSize >= (MAX_LOG_SIZE + LOG_PURGE_AMOUNT)) {
         //Delete the first xxx logs
         let purgedLogs = await db.logs
-                    .orderBy("number")
-                    .offset(0).limit(LOG_PURGE_AMOUNT)
-                    .delete();
+            .orderBy("number")
+            .offset(0).limit(LOG_PURGE_AMOUNT)
+            .delete();
         console.log("🚀 ~ cleanLogsOverQuota ~ Purged logs over quota - ", purgedLogs);
         return;
     } else {
@@ -1311,7 +1338,7 @@ async function sendEmailBatch(videoDictArray) {
     console.log("sendEmailBatch -> emailSendArray", emailSendArray);
 
     //Email batch size. Keep it low
-    let emailBatchSize = 4;
+    let emailBatchSize = 6;
     for (let i = 0; i < emailSendArray.length; i += emailBatchSize) {
 
         //Send single email
@@ -1861,6 +1888,7 @@ function setupNotificationDiv() {
             
         </div>
         <div id="sidebuttonsBottom">
+            <div id="ytb-status" class="ytb-status-hidden ytb-status"></div>
             <tp-yt-paper-button id="displayOptionsButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 1em 12px;">SETTINGS</tp-yt-paper-button>
             <tp-yt-paper-checkbox style="margin-top: 2em; margin-left: 24px;" id="readallCheckbox" noink>Toggle All Read/Unread</tp-yt-paper-checkbox>
         </div>
@@ -2010,20 +2038,20 @@ function displayTabbedOptions() {
                 <tp-yt-paper-textarea id="emailFrom" label="From (Example: MyUsername@gmail.com)"></tp-yt-paper-textarea>
                 <tp-yt-paper-textarea id="emailSubject" label="Subject (Can use DUMMY values. Example: DUMMYCHANNELNAME has a new video: DUMMYVIDEOTITLE)"></tp-yt-paper-textarea>
                 <tp-yt-paper-textarea id="emailBody" label="Body (Can use HTML as well as DUMMY values.)"></tp-yt-paper-textarea>
-                <h3>❗❗❗ DUMMYVIDEOTITLE, DUMMYVIDEOIMAGEURL, DUMMYVIDEOLENGTH, DUMMYVIDEOURL, DUMMYCHANNELIMAGEURL, DUMMYCHANNELNAME, DUMMYCHANNELURL, DUMMYLIVEICON strings will be replaced by their respective values when an email is sent. Only for the Subject and the Body.</h3>
+                <h3>❗❗❗ DUMMYVIDEOTITLE, DUMMYVIDEOIMAGEURL, DUMMYVIDEOLENGTH, DUMMYVIDEOURL, DUMMYCHANNELIMAGEURL, DUMMYCHANNELNAME, DUMMYCHANNELURL, DUMMYLIVEICON strings will be replaced with their respective values when an email is sent. Only for the Subject and the Body.</h3>
                 <tp-yt-paper-checkbox id="sendEmailCheckbox" noink style="--tp-yt-paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Send Email on New Notifications</tp-yt-paper-checkbox>
                 <tp-yt-paper-button id="saveButtonEmail" raised class="" style="margin-top:14px;margin-bottom:0px;">SAVE</tp-yt-paper-button>
                 <tp-yt-paper-button id="sendEmailButton" raised class="" style="margin-top:14px;margin-bottom:14px;">SEND TEST EMAILS</tp-yt-paper-button>
                 <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:8px;">CLOSE</tp-yt-paper-button>
-                <br>
-                <h1 style="margin: 50px auto 30px auto;color: crimson;border: 1px red solid;border-radius: 4px;">Below Options are for SMTPJS. Please Ignore them.</h1>
-                <br>
-                <tp-yt-paper-textarea id="emailHost" label="Host (Example: smtp.gmail.com)"></tp-yt-paper-textarea>
-                <tp-yt-paper-textarea id="emailUsername" label="Username (Example: MyUsername or MyUsername@gmail.com)"></tp-yt-paper-textarea>
-                <tp-yt-paper-textarea id="emailPassword" label="Password (Example: MyPassword)"></tp-yt-paper-textarea>
-                <tp-yt-paper-checkbox id="useSecureTokenCheckbox" noink style="--tp-yt-paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Use Security Token Instead (visit smtpjs.com)</tp-yt-paper-checkbox>
-                <tp-yt-paper-textarea id="emailSecureToken" label="Secure Token (Example: C973D7AD-F097-4B95-91F4-40ABC5567812)" disabled></tp-yt-paper-textarea>
-                <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:0px;">CLOSE</tp-yt-paper-button>
+                <br class="hideSMTPJS">
+                <h1 class="hideSMTPJS" style="margin: 50px auto 30px auto;color: crimson;border: 1px red solid;border-radius: 4px;">Below Options are for SMTPJS. Please Ignore them.</h1>
+                <br class="hideSMTPJS">
+                <tp-yt-paper-textarea class="hideSMTPJS" id="emailHost" label="Host (Example: smtp.gmail.com)"></tp-yt-paper-textarea>
+                <tp-yt-paper-textarea class="hideSMTPJS" id="emailUsername" label="Username (Example: MyUsername or MyUsername@gmail.com)"></tp-yt-paper-textarea>
+                <tp-yt-paper-textarea class="hideSMTPJS" id="emailPassword" label="Password (Example: MyPassword)"></tp-yt-paper-textarea>
+                <tp-yt-paper-checkbox class="hideSMTPJS" id="useSecureTokenCheckbox" noink style="--tp-yt-paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Use Security Token Instead (visit smtpjs.com)</tp-yt-paper-checkbox>
+                <tp-yt-paper-textarea class="hideSMTPJS" id="emailSecureToken" label="Secure Token (Example: C973D7AD-F097-4B95-91F4-40ABC5567812)" disabled></tp-yt-paper-textarea>
+                <tp-yt-paper-button class="hideSMTPJS closeButtonSettings" raised style="margin-top:auto;margin-bottom:0px;">CLOSE</tp-yt-paper-button>
             </div>
         </div>
         <div class="tabbed-section-3 hidden">
