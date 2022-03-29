@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.13
+// @version         1.1.14
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -18,6 +18,7 @@
 let db,
     selectedfile,
     currentPage = 0,
+    buttonElement = null,
     shouldSendEmail = false,
     emailGAPIReady = false,
     GAPIClientID = null,
@@ -41,11 +42,14 @@ const regexImageURLtoID = /https?:\/\/i.ytimg.com\/(vi|vi_webp)\/(.*?)\/.*?.(jpg
 
 /*
 TODO: Increment Version Number
+
 TODO: Add a blocking fullscreen div to protect the native notifications popup window while its loading pages.
 TODO: Finish status box or detect email errors in some other way. Start logging email attempts right after adding the url to the db (or something similar)
 TODO: Add a "Saved!" popup when you click save
 
-TODO (Maybe later): switch moment.js with a better library
+TODO Later: switch moment.js with a better library
+TODO Later: Constrict selector queries (use node.querySelector instead of document.qu...)
+
 
 */
 
@@ -69,7 +73,9 @@ silentAudio.play();
 function startup() {
     let startInterval = setInterval(() => {
         //wait for the notification button to appear (first load)
-        if (document.querySelector("div#button.ytd-notification-topbar-button-renderer") == null) {
+        buttonElement = document.querySelector("div#button.ytd-notification-topbar-button-renderer") ||
+                        document.querySelector(".ytd-notification-topbar-button-shape-renderer #button.yt-icon-button");
+        if (buttonElement == null) {
             return;
         }
         clearInterval(startInterval);
@@ -91,7 +97,7 @@ function startup() {
             //Enable the smaller notifications panel css which loads notifications faster
             document.querySelector("#smallernotpanel").disabled = false;
             //Open notifications panel for scrolling
-            document.querySelector("div#button.ytd-notification-topbar-button-renderer").click();
+            buttonElement.click();
 
             let waiting = 0;
             let startInterval2 = setInterval(() => {
@@ -188,7 +194,7 @@ function continuing() {
     saveNotifications().then(result => {
 
         //Close notifications panel
-        document.querySelector("div#button.ytd-notification-topbar-button-renderer").click();
+        buttonElement.click();
         //Disable smaller notifications panel 
         document.querySelector("#smallernotpanel").disabled = true;
         return;
@@ -404,11 +410,11 @@ function discardSettings(event) {
 function showSpinner(showit = true) {
     if (showit) {
         //Enable spinner
-        document.querySelector("#outerNotifications paper-spinner").setAttribute("active", "");
+        document.querySelector("#outerNotifications tp-yt-paper-spinner").setAttribute("active", "");
         document.querySelector("#loadindicator").hidden = false;
     } else {
         //Disable the spinner
-        document.querySelector("#outerNotifications paper-spinner").removeAttribute("active");
+        document.querySelector("#outerNotifications tp-yt-paper-spinner").removeAttribute("active");
         document.querySelector("#loadindicator").hidden = true;
     }
 }
@@ -421,7 +427,7 @@ function loadAll(event) {
     showSpinner();
     //Enable the smaller notifications panel which loads notifications faster
     document.querySelector("#smallernotpanel").disabled = false;
-    document.querySelector("div#button.ytd-notification-topbar-button-renderer").click();
+    buttonElement.click();
     scrollNotifications(6666, 300);
 }
 
@@ -1894,7 +1900,7 @@ function setupNotificationDiv() {
         </div>
     </div>
     <div id="loadindicator" style="top: 43%;left: 46%;position: absolute;">
-        <paper-spinner active style="width: 70px;height: 70px;"></paper-spinner>
+        <tp-yt-paper-spinner active style="width: 70px;height: 70px;"></tp-yt-paper-spinner>
         <div style="font-size:2em;text-align: center;margin-left: -60%;margin-top: 6px;">
             Loading...
             <br>
