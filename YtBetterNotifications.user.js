@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.14
+// @version         1.1.15
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -295,9 +295,6 @@ function progressCallback({
 async function setupDB() {
     db = new Dexie("NotificationsDatabase");
 
-    //COULD delete the &id and use hash for its functionality instead. This could allow importing new notifs without clearing db
-    //      but you can just export -> combine -> import and that stuff is rare anyways.
-
     await db.version(2).stores({
         notifications: '++number, &id, hash, url, title, time, userimgurl, videoimgurl, channelname, duration, read, live, notvideo, extras',
         settings: 'key, value, extra',
@@ -531,6 +528,20 @@ async function saveNotifications() {
         const dbput = await db.notifications.put(currDict);
 
         if (shouldSendEmail) {
+
+            //Log with Email_Send_Failure type. The log will be updated later.
+            let logDict = {
+                type: "Email_Send_Failure",
+                time: moment().format("YYYY-MM-DD HH:mm:SSS"),
+                extra: {
+                    "currDict": currDict
+                },
+                log: "YTBN Status: Email_After_dbput",
+            };
+            const log_number = await db.logs.put(logDict);
+            //Keep the log number with the notification data
+            currDict.log_number = log_number;
+
             //We are done here, but; currDict gets modified so duplicate it.
             emailDictArray.push(JSON.parse(JSON.stringify(currDict)));
         }
@@ -1343,8 +1354,8 @@ async function sendEmailBatch(videoDictArray) {
 
     console.log("sendEmailBatch -> emailSendArray", emailSendArray);
 
-    //Email batch size. Keep it low
-    let emailBatchSize = 6;
+    //Email batch size. Keep the number low as a large batch number can be detected as spam.
+    let emailBatchSize = 2;
     for (let i = 0; i < emailSendArray.length; i += emailBatchSize) {
 
         //Send single email
@@ -1570,6 +1581,7 @@ async function sendEmail(videoDict) {
 
     let emailSendResponse;
     let retryEmail = 0;
+    let emailSuccess = false;
 
     do {
 
@@ -1615,38 +1627,49 @@ async function sendEmail(videoDict) {
             });
         }
 
-        let emailData = {
-            replaceThese
-        };
-
-        let logDict = {
-            type: "Email_Send",
-            time: moment().format("YYYY-MM-DD HH:mm:SSS"),
-            extra: emailData,
-            log: emailSendResponse,
-        };
-
-        //DONE log successful emails as well
-        const logput = await db.logs.put(logDict);
-        console.log("sendEmail -> logDict, logput", logDict, logput);
-
-        //console.log("sendEmail -> emailSendResponse", emailSendResponse);
-        //retry sending email up to 3 times
-        //LATER gmail status text might have to be "SENT" instead
-        //These are loggend in the above dict anyways
-        //console.log("sendEmail -> emailSendResponse BELOW");
-        //console.log(emailSendResponse);
+        //Retry sending email up to 3 times
         if ((emailSendResponse != "OK") && (emailSendResponse.statusText != "OK")) {
+            //Email send failure. Retrying...
             console.log("sendEmail -> retryEmail", retryEmail);
-            if (retryEmail == 0) {
-                retryEmail = 1;
-            } else {
-                retryEmail++;
-            }
+            retryEmail++;
         } else {
+            //Email send success.
             retryEmail = 999;
+            emailSuccess = true;
         }
+
     } while (retryEmail <= 2);
+
+    //Update the log of this notification with the new data
+    let emailData = {
+        replaceThese
+    };
+
+    let logDict = {
+        type: "Email_Send_Failure",
+        time: moment().format("YYYY-MM-DD HH:mm:SSS"),
+        extra: emailData,
+        log: emailSendResponse,
+    };
+
+    if (emailSuccess) {
+        //Success: Email_Send_Success log type
+        logDict.type = "Email_Send_Success";
+    } else {
+        //Failure: Email_Send_Failure log type
+    }
+
+    //Update the log
+    let updated_log = await db.logs
+        .where("number")
+        .equals(videoDict.log_number)
+        .modify(logDict)
+        .catch(Dexie.ModifyError, function(e) {
+            console.error(e.failures.length + "failed to modify read value");
+            // throw e;
+        });
+
+    console.log("sendEmail -> logDict, updated_log", logDict, updated_log);
 
     return emailSendResponse;
 
