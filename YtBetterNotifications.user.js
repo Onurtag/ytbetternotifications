@@ -43,12 +43,13 @@ const regexImageURLtoID = /https?:\/\/i.ytimg.com\/(vi|vi_webp)\/(.*?)\/.*?.(jpg
 /*
 TODO: Increment Version Number
 
-TODO: Add a blocking fullscreen div to protect the native notifications popup window while its loading pages.
-TODO: Finish status box or detect email errors in some other way. Start logging email attempts right after adding the url to the db (or something similar)
-TODO: Add a "Saved!" popup when you click save
 
-TODO Later: switch moment.js with a better library
-TODO Later: Constrict selector queries (use node.querySelector instead of document.qu...)
+LATER: Email error log window with a table and a "retry all" or "copy all" button
+LATER: Add a filter/search box/tab/etc
+LATER: Add a blocking fullscreen div to protect the native notifications popup window while its loading pages.
+LATER: Add a "Saved!" popup when you click save
+LATER: switch moment.js with a better library
+LATER: Constrict selector queries (use node.querySelector instead of document.querySelector etc...)
 
 
 */
@@ -71,10 +72,10 @@ silentAudio.play();
 
 
 function startup() {
-    let startInterval = setInterval(() => {
+    let startInterval = setInterval(async () => {
         //wait for the notification button to appear (first load)
         buttonElement = document.querySelector("div#button.ytd-notification-topbar-button-renderer") ||
-                        document.querySelector(".ytd-notification-topbar-button-shape-renderer #button.yt-icon-button");
+            document.querySelector(".ytd-notification-topbar-button-shape-renderer #button.yt-icon-button");
         if (buttonElement == null) {
             return;
         }
@@ -83,41 +84,40 @@ function startup() {
         //set moment.js locale
         moment.locale(document.querySelector("html").lang);
 
-        setupDB().then(result => {
+        //Setup dexie db
+        await setupDB();
+        //read settings from the database
+        await readSettings();
 
-            //read settings
-            return readSettings();
+        //Setup the notifications div (with the "loading..." spinner)
+        addStyles();
+        setupNotificationDiv();
+        //Check if there are any existing failure logs (and update the button)
+        await checkErrorLogs();
 
-        }).then(result => {
+        //Enable the smaller notifications panel css which loads notifications faster
+        document.querySelector("#smallernotpanel").disabled = false;
+        //Open notifications panel for scrolling
+        buttonElement.click();
 
-            //Setup the notifications div (and it starts spinning)
-            addStyles();
-            setupNotificationDiv();
+        let waiting = 0;
+        let startInterval2 = setInterval(() => {
+            //Wait for the GAPI if we are using it.
+            if (GAPIClientID == null || emailGAPIReady == true || waiting > 10000) {
 
-            //Enable the smaller notifications panel css which loads notifications faster
-            document.querySelector("#smallernotpanel").disabled = false;
-            //Open notifications panel for scrolling
-            buttonElement.click();
+                //Wait for any notification element to appear
+                if (document.querySelector('ytd-notification-renderer') != null) {
+                    clearInterval(startInterval2);
 
-            let waiting = 0;
-            let startInterval2 = setInterval(() => {
-                //Wait for the GAPI if we are using it.
-                if (GAPIClientID == null || emailGAPIReady == true || waiting > 10000) {
+                    //start scrolling through notifications
+                    scrollNotifications();
 
-                    //Wait for any notification element to appear
-                    if (document.querySelector('ytd-notification-renderer') != null) {
-                        clearInterval(startInterval2);
-
-                        //start scrolling through notifications
-                        scrollNotifications();
-
-                    }
                 }
-                waiting += 100;
-            }, 100);
-            return;
+            }
+            waiting += 100;
+        }, 100);
+        return;
 
-        });
     }, 100);
 }
 
@@ -314,7 +314,7 @@ async function setupDB() {
     //     */
     // });
 
-    await db.open().catch(function(err) {
+    await db.open().catch(function (err) {
         console.error(err.stack || err);
     });
 
@@ -326,7 +326,7 @@ function previousPage(event) {
         return;
     }
     cleanTable();
-    loadNotifications(currentPage - 1).then(function(result) {
+    loadNotifications(currentPage - 1).then(function (result) {
         --currentPage;
         setupPaginationButtons();
         return result;
@@ -338,7 +338,7 @@ function nextPage(event) {
         return;
     }
     cleanTable();
-    loadNotifications(currentPage + 1).then(function(result) {
+    loadNotifications(currentPage + 1).then(function (result) {
         ++currentPage;
         setupPaginationButtons();
         return result;
@@ -351,7 +351,7 @@ function firstPage(event) {
         return;
     }
     cleanTable();
-    loadNotifications(0).then(function(result) {
+    loadNotifications(0).then(function (result) {
         currentPage = 0;
         setupPaginationButtons();
         return result;
@@ -363,7 +363,7 @@ function lastPage(event) {
         return;
     }
     cleanTable();
-    loadNotifications(maxPages - 1).then(function(result) {
+    loadNotifications(maxPages - 1).then(function (result) {
         currentPage = maxPages - 1;
         setupPaginationButtons();
         return result;
@@ -507,7 +507,7 @@ async function saveNotifications() {
         const count = await db.notifications
             .where('hash')
             .equals(currDict.hash)
-            .count().then(function(count) {
+            .count().then(function (count) {
                 return count;
             });
         //the notification already exists so skip it.
@@ -553,7 +553,7 @@ async function saveNotifications() {
 
     //get db size and set max pages
     const itemcount = await db.notifications
-        .count().then(function(count) {
+        .count().then(function (count) {
             return count;
         });
     maxPages = Math.ceil(itemcount / itemsperPage);
@@ -567,7 +567,7 @@ async function saveNotifications() {
 }
 
 async function loadNotifications(page = 0) {
-    const notificationsArray = await db.notifications.orderBy('time').reverse().offset(page * itemsperPage).limit(itemsperPage).toArray().then(function(result) {
+    const notificationsArray = await db.notifications.orderBy('time').reverse().offset(page * itemsperPage).limit(itemsperPage).toArray().then(function (result) {
         return result;
     });
 
@@ -679,7 +679,7 @@ async function togglereadAll(event) {
         "read": readvalue
     }).then(result => {
         //console.log("checked:" + readvalue);
-    }).catch(Dexie.ModifyError, function(e) {
+    }).catch(Dexie.ModifyError, function (e) {
         console.error(e.failures.length + "failed to modify read value");
         throw e;
     });
@@ -721,7 +721,7 @@ async function checkboxReadClicked(event) {
             eventRow.classList.remove("notificationRead");
         }
         return result;
-    }).catch(Dexie.ModifyError, function(e) {
+    }).catch(Dexie.ModifyError, function (e) {
         console.error(e.failures.length + "failed to modify read value");
         throw e;
     });
@@ -1014,7 +1014,7 @@ function addStyles() {
         color: #ddd;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.35);
         background-color: rgb(30, 30, 30);
-        border: 2px rgb(30, 30, 30) solid;
+        border: 2px rgb(62, 62, 62) solid;
         display: block;
         width: 50%;
         height: 101%;
@@ -1129,6 +1129,11 @@ function addStyles() {
         display: none;
         transform: none;
         transition: none;
+    }
+
+    .button_error {
+        border: 1px #f009 solid;
+        filter: drop-shadow(0px 0px 4px #ff3e3e);
     }
 
     `;
@@ -1249,6 +1254,7 @@ function testEmail() {
         live: true,
         read: false,
         notvideo: false,
+        log_number: "disabled"
     };
     videoDictArray.push(testDict);
 
@@ -1262,6 +1268,7 @@ function testEmail() {
         live: false,
         read: false,
         notvideo: false,
+        log_number: "disabled"
     };
     videoDictArray.push(testDict);
 
@@ -1275,6 +1282,7 @@ function testEmail() {
         live: false,
         read: false,
         notvideo: true,
+        log_number: "disabled"
     };
     videoDictArray.push(testDict);
 
@@ -1287,7 +1295,7 @@ function testEmail() {
     //     });
     // });
 
-    const sendingemail = sendEmailBatch(videoDictArray).then(function(result) {
+    const sendingemail = sendEmailBatch(videoDictArray).then(function (result) {
         console.log("TEST EMAILS SENT.");
         return result;
     });
@@ -1371,6 +1379,9 @@ async function sendEmailBatch(videoDictArray) {
             .catch(e => {
                 console.log(`Error in sending email for the batch ${i} - ${e}`);
             });
+
+        //check for error logs at the end
+        await checkErrorLogs();
     }
 
 }
@@ -1387,9 +1398,9 @@ async function sendEmail(videoDict) {
 
     //Use fetch to get the video data
     //This can be seperated into its own function if needed.
-    await fetch(videoDict.url).then(function(response) {
+    await fetch(videoDict.url).then(function (response) {
         return response.text();
-    }).then(function(newhtml) {
+    }).then(function (newhtml) {
 
         //raw html for debug
         emailhtml = newhtml;
@@ -1513,7 +1524,7 @@ async function sendEmail(videoDict) {
             console.warn(error);
         }
 
-    }).catch(function(err) {
+    }).catch(function (err) {
         // There was an error
         console.warn('Something went wrong while fetching video data.', err);
     });
@@ -1628,7 +1639,7 @@ async function sendEmail(videoDict) {
         }
 
         //Retry sending email up to 3 times
-        if ((emailSendResponse != "OK") && (emailSendResponse.statusText != "OK")) {
+        if ((emailSendResponse != "OK") && (emailSendResponse.statusText != "OK") && (emailSendResponse.result.labelIds.includes("SENT") == false)) {
             //Email send failure. Retrying...
             console.log("sendEmail -> retryEmail", retryEmail);
             retryEmail++;
@@ -1660,14 +1671,17 @@ async function sendEmail(videoDict) {
     }
 
     //Update the log
-    let updated_log = await db.logs
-        .where("number")
-        .equals(videoDict.log_number)
-        .modify(logDict)
-        .catch(Dexie.ModifyError, function(e) {
-            console.error(e.failures.length + "failed to modify read value");
-            // throw e;
-        });
+    let updated_log;
+    if (videoDict.log_number != "disabled") {
+        updated_log = await db.logs
+            .where("number")
+            .equals(videoDict.log_number)
+            .modify(logDict)
+            .catch(Dexie.ModifyError, function (e) {
+                console.error(e.failures.length + "failed to modify read value");
+                // throw e;
+            });
+    }
 
     console.log("sendEmail -> logDict, updated_log", logDict, updated_log);
 
@@ -1721,6 +1735,30 @@ async function readSettings() {
     }
 
 }
+
+/**
+ * Checks for log type "Email_Send_Failure" and updates the error button accordingly
+ */
+async function checkErrorLogs() {
+
+    const errored_logs = await db.logs
+        .where("type")
+        .equals("Email_Send_Failure")
+        .toArray();
+
+    let errButton = document.querySelector("#displayErrorListButton");
+    let logLength = errored_logs.length;
+    if (logLength > 0) {
+        //Update error button text and class
+        errButton.innerText = "ERRORS: " + logLength;
+        errButton.classList.add("button_error");
+    } else {
+        errButton.innerText = "ERRORS: NONE";
+        errButton.classList.remove("button_error");
+    }
+
+}
+
 
 function saveOptions() {
 
@@ -1797,7 +1835,7 @@ var emailGAPI = {
             clientId: CLIENT_ID,
             discoveryDocs: DISCOVERY_DOCS,
             scope: SCOPES
-        }).then(function() {
+        }).then(function () {
 
             // Handle the initial sign-in state.
             emailGAPI.updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
@@ -1805,7 +1843,7 @@ var emailGAPI = {
             // Listen for sign-in state changes.
             gapi.auth2.getAuthInstance().isSignedIn.listen(emailGAPI.updateSigninStatus);
 
-        }, function(error) {
+        }, function (error) {
             //LATER errors to the database instead
             emailGAPIReady = false;
             console.log(JSON.stringify(error, null, 2));
@@ -1918,6 +1956,7 @@ function setupNotificationDiv() {
         </div>
         <div id="sidebuttonsBottom">
             <div id="ytb-status" class="ytb-status-hidden ytb-status"></div>
+            <tp-yt-paper-button id="displayErrorListButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 0em 12px;">ERRORS: NONE</tp-yt-paper-button>
             <tp-yt-paper-button id="displayOptionsButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 1em 12px;">SETTINGS</tp-yt-paper-button>
             <tp-yt-paper-checkbox style="margin-top: 2em; margin-left: 24px;" id="readallCheckbox" noink>Toggle All Read/Unread</tp-yt-paper-checkbox>
         </div>
@@ -2152,11 +2191,11 @@ function displayTabbedOptions() {
     ];
 
     // Create the toggle function
-    var toggleTab = function(element) {
+    var toggleTab = function (element) {
         var parent = element.parentNode;
 
         // Do things on click
-        document.querySelectorAll(element)[0].addEventListener('click', function() {
+        document.querySelectorAll(element)[0].addEventListener('click', function () {
             // Remove the active class on all tabs.
             // climbing up the DOM tree with `parentNode` and target 
             // the children ( the tabs ) with childNodes
