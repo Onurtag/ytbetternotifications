@@ -31,7 +31,7 @@ const MAX_LOG_SIZE = 600,
     LOG_PURGE_AMOUNT = 100;
 
 ytbnDebugEmail = false;
-console.log("ytbnDebugEmail", ytbnDebugEmail);
+console.log("🚀 YTBN ~ ytbnDebugEmail", ytbnDebugEmail);
 
 let dontSendEmailsOver = 150;
 let itemsperPage = 50;
@@ -250,7 +250,6 @@ async function exportDB(event) {
 
 function fileInputOnchange(event) {
     selectedfile = event.target.files[0];
-    // console.log("Selected file: " + selectedfile.name);
 }
 
 async function importDB(event) {
@@ -264,7 +263,7 @@ async function importDB(event) {
             throw new Error(`Only files can be input here.`);
         }
 
-        console.log("Importing file: " + file.name);
+        console.log("🚀 YTBN ~ Importing file: " + file.name);
         cleanTable();
         showSpinner();
         document.querySelector("#notificationOptions").remove();
@@ -278,7 +277,7 @@ async function importDB(event) {
         currentPage = 0;
         setupPaginationButtons();
         showSpinner(false);
-        console.log("Import complete.");
+        console.log("🚀 YTBN ~ Import complete.");
         return;
     } catch (error) {
         console.error('File import error: ' + error);
@@ -289,7 +288,7 @@ function progressCallback({
     totalRows,
     completedRows
 }) {
-    console.log(`Export/Import Progress: ${completedRows} of ${totalRows} rows completed.`);
+    console.log(`🚀 YTBN ~ Export/Import Progress: ${completedRows} of ${totalRows} rows completed.`);
 }
 
 async function setupDB() {
@@ -515,7 +514,7 @@ async function saveNotifications() {
             return "alreadyexists";
         }
 
-        console.log("saveNotifications -> currDict", currDict);
+        console.log("🚀 YTBN ~ saveNotifications -> currDict", currDict);
 
         //detect livestreams
         if (currDict.title.indexOf(" is live: ") != -1) {
@@ -558,7 +557,7 @@ async function saveNotifications() {
         });
     maxPages = Math.ceil(itemcount / itemsperPage);
 
-    console.log(newCount + " new notifications were saved into the db.");
+    console.log("🚀 YTBN ~ " + newCount + " new notifications were saved into the db.");
 
     //send all emails
     if (shouldSendEmail || emailDictArray.length > 0) {
@@ -659,7 +658,6 @@ function displayNotification(currDict) {
 }
 
 async function togglereadAll(event) {
-    //console.log(event.target);
     let theCheckbox = event.target.closest("tp-yt-paper-checkbox");
 
     var r = confirm("Are you sure? This can not be undone! (unless you export your notifications)");
@@ -1286,17 +1284,10 @@ function testEmail() {
     };
     videoDictArray.push(testDict);
 
-    console.log("testEmail -> videoDictArray", videoDictArray);
-
-    // videoDictArray.forEach(element => {
-    //     console.log("testEmail -> element", element);
-    //     Object.entries(element).forEach(element => {
-    //         console.log("testEmail -> element", element);
-    //     });
-    // });
+    console.log("🚀 YTBN ~ testEmail -> videoDictArray", videoDictArray);
 
     const sendingemail = sendEmailBatch(videoDictArray).then(function (result) {
-        console.log("TEST EMAILS SENT.");
+        console.log("🚀 YTBN ~ TEST EMAILS SENT.");
         return result;
     });
 }
@@ -1312,7 +1303,7 @@ async function cleanLogsOverQuota() {
             .orderBy("number")
             .offset(0).limit(LOG_PURGE_AMOUNT)
             .delete();
-        console.log("🚀 ~ cleanLogsOverQuota ~ Purged logs over quota - ", purgedLogs);
+        console.log("🚀 YTBN ~ cleanLogsOverQuota ~ Purged logs over quota - ", purgedLogs);
         return;
     } else {
         return;
@@ -1332,8 +1323,6 @@ async function sendEmailBatch(videoDictArray) {
 
     //Purge some email logs if we have too many.
     cleanLogsOverQuota();
-
-    //console.log("sendEmailBatch -> videoDictArray", videoDictArray);
 
     //handle multiple urls, replies/comments
     let emailSendArray = [];
@@ -1360,7 +1349,7 @@ async function sendEmailBatch(videoDictArray) {
         }
     }
 
-    console.log("sendEmailBatch -> emailSendArray", emailSendArray);
+    console.log("🚀 YTBN ~ sendEmailBatch -> emailSendArray", emailSendArray);
 
     //Email batch size. Keep the number low as a large batch number can be detected as spam.
     let emailBatchSize = 2;
@@ -1390,7 +1379,7 @@ async function sendEmail(videoDict) {
 
     //no need to clone videoDict
 
-    console.log("sendEmail -> videoDict", videoDict, Date.now());
+    console.log("🚀 YTBN ~ sendEmail -> videoDict", videoDict, Date.now());
 
     let channelName = "",
         channelURL = "",
@@ -1529,19 +1518,10 @@ async function sendEmail(videoDict) {
         console.warn('Something went wrong while fetching video data.', err);
     });
 
-    // console.log("sendEmail -> channelName", channelName);
-    // console.log("sendEmail -> channelURL", channelURL);
-    // console.log("sendEmail -> vidLength", vidLength);
-    // console.log("sendEmail -> videoimgurl", videoDict.videoimgurl);
-    // console.log("sendEmail -> videoDict.userimgurl", videoDict.userimgurl);
-    // console.log("sendEmail -> videoDict.title", videoDict.title);
-
     const emailSettings = await db.settings
         .where('key')
         .equals("email")
         .toArray();
-
-    //console.log(emailSettings[0].value);
 
     //using regex detect the category+videotitle
     //This is useless because we fetch the title anyways
@@ -1576,7 +1556,7 @@ async function sendEmail(videoDict) {
         DUMMYLIVEICON: liveIcon,
     };
 
-    console.log("sendEmail -> replaceThese", replaceThese);
+    console.log("🚀 YTBN ~ sendEmail -> replaceThese", replaceThese);
 
     let subjectVal = emailSettings[0].value.Subject;
     let bodyVal = emailSettings[0].value.Body;
@@ -1683,7 +1663,7 @@ async function sendEmail(videoDict) {
             });
     }
 
-    console.log("sendEmail -> logDict, updated_log", logDict, updated_log);
+    console.log("🚀 YTBN ~ sendEmail -> logDict, updated_log", logDict, updated_log);
 
     return emailSendResponse;
 
