@@ -44,13 +44,20 @@ const regexImageURLtoID = /https?:\/\/i.ytimg.com\/(vi|vi_webp)\/(.*?)\/.*?.(jpg
 TODO: Increment Version Number
 
 
-LATER: Email error log window with a table and a "retry all" or "copy all" button
 LATER: Add a filter/search box/tab/etc
 LATER: Add a blocking fullscreen div to protect the native notifications popup window while its loading pages.
 LATER: Add a "Saved!" popup when you click save
 LATER: switch moment.js with a better library
 LATER: Constrict selector queries (use node.querySelector instead of document.querySelector etc...)
+LATER MAYBE: Email error log window with a table
 
+--other info--
+1. alternative youtube library: https://github.com/LuanRT/YouTube.js 
+    + node.js
+    + has notifications
+    + cookies or oauth
+    !!!: main account might get in trouble (etc.)
+----
 
 */
 
@@ -500,6 +507,7 @@ async function saveNotifications() {
 
         //detect duplications
         //concenate "url + userimgurl + title(comment)" strings and hash the result
+        //LATER MAYBE: remove userimgurl from the hash (warning!)
         currDict.hash = await digestToSHA256(currDict.url + currDict.userimgurl + currDict.title);
 
         //duplicate check using hash
@@ -533,7 +541,7 @@ async function saveNotifications() {
                 type: "Email_Send_Failure",
                 time: moment().format("YYYY-MM-DD HH:mm:SSS"),
                 extra: {
-                    "currDict": currDict
+                    notifData: currDict
                 },
                 log: "YTBN Status: Email_After_dbput",
             };
@@ -560,7 +568,7 @@ async function saveNotifications() {
     console.log("🚀 YTBN ~ " + newCount + " new notifications were saved into the db.");
 
     //send all emails
-    if (shouldSendEmail || emailDictArray.length > 0) {
+    if (emailDictArray.length > 0) {
         sendEmailBatch(emailDictArray);
     }
 }
@@ -1369,9 +1377,10 @@ async function sendEmailBatch(videoDictArray) {
                 console.log(`Error in sending email for the batch ${i} - ${e}`);
             });
 
-        //check for error logs at the end
-        await checkErrorLogs();
     }
+
+    //check for error logs after all emails were attempted to send
+    await checkErrorLogs();
 
 }
 
@@ -1379,7 +1388,7 @@ async function sendEmail(videoDict) {
 
     //no need to clone videoDict
 
-    console.log("🚀 YTBN ~ sendEmail -> videoDict", videoDict, Date.now());
+    // console.log("🚀 YTBN ~ sendEmail -> videoDict", videoDict, Date.now());
 
     let channelName = "",
         channelURL = "",
@@ -1556,7 +1565,7 @@ async function sendEmail(videoDict) {
         DUMMYLIVEICON: liveIcon,
     };
 
-    console.log("🚀 YTBN ~ sendEmail -> replaceThese", replaceThese);
+    // console.log("🚀 YTBN ~ sendEmail -> replaceThese", replaceThese);
 
     let subjectVal = emailSettings[0].value.Subject;
     let bodyVal = emailSettings[0].value.Body;
@@ -1584,8 +1593,7 @@ async function sendEmail(videoDict) {
                 subjectVal,
                 bodyVal
             ).then(message => {
-                console.log("Email.send response: ");
-                console.log(message);
+                console.log("🚀 YTBN ~ Email.send response: ", message);
                 return message;
             });
 
@@ -1598,7 +1606,7 @@ async function sendEmail(videoDict) {
                 Subject: subjectVal,
                 Body: bodyVal,
             }).then(message => {
-                console.log("Email.send response: " + message);
+                console.log("🚀 YTBN ~ Email.send response: " + message);
                 return message;
             });
 
@@ -1613,7 +1621,7 @@ async function sendEmail(videoDict) {
                 Subject: subjectVal,
                 Body: bodyVal,
             }).then(message => {
-                console.log("Email.send response: " + message);
+                console.log("🚀 YTBN ~ Email.send response: " + message);
                 return message;
             });
         }
@@ -1632,14 +1640,13 @@ async function sendEmail(videoDict) {
     } while (retryEmail <= 2);
 
     //Update the log of this notification with the new data
-    let emailData = {
-        replaceThese
-    };
-
     let logDict = {
         type: "Email_Send_Failure",
         time: moment().format("YYYY-MM-DD HH:mm:SSS"),
-        extra: emailData,
+        extra: {
+            replaceThese: replaceThese,
+            notifData: videoDict
+        },
         log: emailSendResponse,
     };
 
@@ -1650,10 +1657,11 @@ async function sendEmail(videoDict) {
         //Failure: Email_Send_Failure log type
     }
 
+    console.log("🚀 YTBN ~ sendEmail -> logDict", logDict);
+
     //Update the log
-    let updated_log;
     if (videoDict.log_number != "disabled") {
-        updated_log = await db.logs
+        let updated_log = await db.logs
             .where("number")
             .equals(videoDict.log_number)
             .modify(logDict)
@@ -1662,8 +1670,6 @@ async function sendEmail(videoDict) {
                 // throw e;
             });
     }
-
-    console.log("🚀 YTBN ~ sendEmail -> logDict, updated_log", logDict, updated_log);
 
     return emailSendResponse;
 
@@ -1736,7 +1742,33 @@ async function checkErrorLogs() {
         errButton.innerText = "ERRORS: NONE";
         errButton.classList.remove("button_error");
     }
+    //Return errored_logs array
+    return errored_logs;
+}
 
+async function errorButtonClick() {
+    let errored_logs = await checkErrorLogs();
+    console.log("🚀 YTBN ~ errorButtonClick ~ errored_logs", errored_logs);
+    if (errored_logs.length > 0) {
+        var r = confirm("Would you like to re-send all errored emails?");
+        if (r != true) {
+            return;
+        }
+        //Re-send errored emails using the log's notifData (which contains the log_number and the video details)
+        let emailArray = [];
+        errored_logs.forEach(thislog => {
+            let notifData = thislog.extra.notifData;
+            //Add the log_number if it doesn't exist (Email_After_dbput)
+            notifData.log_number = notifData.log_number || thislog.number;
+            emailArray.push(notifData);
+            console.log("🚀 YTBN ~ errorButtonClick ~ notifData", notifData);
+        });
+
+        //send all emails
+        if (emailArray.length > 0) {
+            sendEmailBatch(emailArray);
+        }
+    }
 }
 
 
@@ -1964,6 +1996,7 @@ function setupNotificationDiv() {
     document.querySelector("#sidebuttons #readtransparencyCheckbox").addEventListener('click', readtransparency);
     document.querySelector("#sidebuttons #commenttransparencyCheckbox").addEventListener('click', commenttransparency);
     document.querySelector("#sidebuttons #displayOptionsButton").addEventListener('click', displayTabbedOptions);
+    document.querySelector("#sidebuttons #displayErrorListButton").addEventListener('click', errorButtonClick);
     //LATER fix search 2
     // document.querySelector("#sidebuttons #sidebarSearchButton").addEventListener('click', sidebarSearch);
     // document.querySelector("#sidebuttons #sidebarSearchInput").addEventListener('keyup', sidebarInputkey);
