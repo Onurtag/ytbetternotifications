@@ -81,7 +81,8 @@ silentAudio.play();
 function startup() {
     let startInterval = setInterval(async () => {
         //wait for the notification button to appear (first load)
-        buttonElement = document.querySelector("div#button.ytd-notification-topbar-button-renderer") ||
+        buttonElement = document.querySelector("[class*='notification-topbar-button'] > button") ||
+            document.querySelector("div#button.ytd-notification-topbar-button-renderer") ||
             document.querySelector(".ytd-notification-topbar-button-shape-renderer #button.yt-icon-button");
         if (buttonElement == null) {
             return;
