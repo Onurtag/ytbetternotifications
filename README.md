@@ -74,7 +74,7 @@ You can install the auto updated version with [**this link**](https://github.com
 # 📚**Used libraries**  
 
  - [Dexie + dexie-export-import](https://github.com/dfahlander/Dexie.js)  
- - [downloadjs](https://github.com/rndme/download)
+ - [FileSaver.js](https://github.com/eligrey/FileSaver.js)  
  - [moment.js](https://github.com/moment/moment/)  
  - [js-base64](https://github.com/dankogai/js-base64/)  
 
