@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.15
+// @version         1.1.16
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -61,22 +61,31 @@ LATER MAYBE: Email error log window with a table
 
 */
 
+//Play silent audio to prevent background tab throttling
+//This might require "autoplay" to be turned on for the website
+//original source: https://github.com/t-mullen/silent-audio
+class SilentAudio {
+    constructor() {
+        this.ctx = new AudioContext();
+        this.source = this.ctx.createConstantSource();
+        this.gainNode = this.ctx.createGain();
 
-//Play a silent audio file to prevent background throttling (different files for firefox/chromium)
-//Might require autoplay to be turned on for the website
-let silentAudio, silentAudioFile;
-let isFirefox = typeof InstallTrigger !== 'undefined';
-if (isFirefox == true) {
-    silentAudioFile = 'data:audio/ogg;base64,T2dnUwACAAAAAAAAAAAHA8coAAAAAIF47n4BE09wdXNIZWFkAQE0AEAfAAAAAABPZ2dTAAAAAAAAAAAAAAcDxygBAAAAUzJlNAGOT3B1c1RhZ3MNAAAATGF2ZjU1LjMzLjEwMAQAAAAVAAAAYXV0aG9yPUFkdmVudHVyZSBMYW5kFAAAAGFsYnVtPUFkdmVudHVyZSBMYW5kIwAAAHRpdGxlPUVtcHR5IExvb3AgRm9yIEpTIFBlcmZvcm1hbmNlFQAAAGVuY29kZXI9TGF2ZjU1LjMzLjEwME9nZ1MAAFi9AAAAAAAABwPHKAIAAAAyAzleMwoNCgsPCQkMDgwKDA0ODQ0NDAwMDAwMCw4MDQ4LDA0ODAwNDQwLCwoPDgwLCg0MDgsMDAgDQvtgoSdsKEAINjpmG6kyq3UB2fEgCDZ/rdQl7AWg4Ag2dYShfx2/4UHACDZ/ow5omm9mOzA0aJyXCDZ1OLVrIJjzCAVr7b2iKamgCDZ1SDnykImIDYOACDa3TfB0Gr+bWrtGb+AINnUv+ROFBR8zDoAINnVnnsPAbLa6CDZ6sGCGuOv3nlNwCDZ6I3ut9dAaHCqX3wg2XDBwFzhT1bJXG4SgCDZ1SFKCeQWBogMPggg2daDavCMN1fLmYOAINmjtoTkep+3zvsjPCDa5WDHLsGmySt1gCDZ6KI6PqMV1GKI4CDZ2BdGcG3TAu1uACDa9TAnYduSD+H3wCDZ1bhTJjA3kXrTACDU4w/g6h585SxZ0CDZ1oxPBDPDre7gINnVBqj1sCfuTiZIzsAg2dgRZAKiazM0ItQg2dgXiRKSpPCjR/SgINnXJOQWzDETgs/tm4Ag2O4gbz8WYlj2wCDWdjVsms44oglYaCDZ1S85AzQVEE/b83Ag2eW35JDbXlk8eCJfMCDcki/+9RVLZ3O4fCDVey7IEoi5wDZcVCDZ0LF6mtpuWlXG8YAg2V2QIXTjvaCEIOIwINnWjFnyIy+83bLgINnXL0yMgbqjfyAg2uVeivlfw1LfQCDZ1y8XIVqvYVQg2daJgNh1l6Ul2oTOYaAg2doUKwX0fVXOgLHrQCDZ1pGelDVg0sabgCDZC/Z1+dxdRPIwINnQw8kKLxYt5CDZ2BBYNLi6nUoeI4Ag2V5BoAlPMrQ57YAg2dW1ns/tgS0qGpA1ACDZX214nEzghqKQINacJO/rHa02gVEYINleU2/9UWr02NuBPZ2dTAAQwwwAAAAAAAAcDxygDAAAARL86cAEKCAVTo0DgY4cToA==';
-    silentAudio = new Audio(silentAudioFile);
-    silentAudio.volume = 0.01;
-} else {
-    silentAudioFile = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU3LjcxLjEwMAAAAAAAAAAAAAAA/+M4wAAAAAAAAAAAAEluZm8AAAAPAAAAEAAABVgANTU1NTU1Q0NDQ0NDUFBQUFBQXl5eXl5ea2tra2tra3l5eXl5eYaGhoaGhpSUlJSUlKGhoaGhoaGvr6+vr6+8vLy8vLzKysrKysrX19fX19fX5eXl5eXl8vLy8vLy////////AAAAAExhdmM1Ny44OQAAAAAAAAAAAAAAACQCgAAAAAAAAAVY82AhbwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+MYxAALACwAAP/AADwQKVE9YWDGPkQWpT66yk4+zIiYPoTUaT3tnU487uNhOvEmQDaCm1Yz1c6DPjbs6zdZVBk0pdGpMzxF/+MYxA8L0DU0AP+0ANkwmYaAMkOKDDjmYoMtwNMyDxMzDHE/MEsLow9AtDnBlQgDhTx+Eye0GgMHoCyDC8gUswJcMVMABBGj/+MYxBoK4DVpQP8iAtVmDk7LPgi8wvDzI4/MWAwK1T7rxOQwtsItMMQBazAowc4wZMC5MF4AeQAGDpruNuMEzyfjLBJhACU+/+MYxCkJ4DVcAP8MAO9J9THVg6oxRMGNMIqCCTAEwzwwBkINOPAs/iwjgBnMepYyId0PhWo+80PXMVsBFzD/AiwwfcKGMEJB/+MYxDwKKDVkAP8eAF8wMwIxMlpU/OaDPLpNKkEw4dRoBh6qP2FC8jCJQFcweQIPMHOBtTBoAVcwOoCNMYDI0u0Dd8ANTIsy/+MYxE4KUDVsAP8eAFBVpgVVPjdGeTEWQr0wdcDtMCeBgDBkgRgwFYB7Pv/zqx0yQQMCCgKNgonHKj6RRVkxM0GwML0AhDAN/+MYxF8KCDVwAP8MAIHZMDDA3DArAQo3K+TF5WOBDQw0lgcKQUJxhT5sxRcwQQI+EIPWMA7AVBoTABgTgzfBN+ajn3c0lZMe/+MYxHEJyDV0AP7MAA4eEwsqP/PDmzC/gNcwXUGaMBVBIwMEsmB6gaxhVuGkpoqMZMQjooTBwM0+S8FTMC0BcjBTgPwwOQDm/+MYxIQKKDV4AP8WADAzAKQwI4CGPhWOEwCFAiBAYQnQMT+uwXUeGzjBWQVkwTcENMBzA2zAGgFEJfSPkPSZzPXgqFy2h0xB/+MYxJYJCDV8AP7WAE0+7kK7MQrATDAvQRIwOADKMBuA9TAYQNM3AiOSPjGxowgHMKFGcBNMQU1FMy45OS41VVU/31eYM4sK/+MYxKwJaDV8AP7SAI4y1Yq0MmOIADGwBZwwlgIJMztCM0qU5TQPG/MSkn8yEROzCdAxECVMQU1FMy45OS41VTe7Ohk+Pqcx/+MYxMEJMDWAAP6MADVLDFUx+4J6Mq7NsjN2zXo8V5fjVJCXNOhwM0vTCDAxFpMYYQU+RlVMQU1FMy45OS41VVVVVVVVVVVV/+MYxNcJADWAAP7EAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxOsJwDWEAP7SAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPMLoDV8AP+eAFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV/+MYxPQL0DVcAP+0AFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
-    silentAudio = new Audio(silentAudioFile);
+        this.gainNode.gain.value = 0.001; // required to prevent popping on start
+        this.source.connect(this.gainNode);
+        this.gainNode.connect(this.ctx.destination);
+        //suspend context and start the source
+        this.ctx.suspend();
+        this.source.start();
+    }
+    play() {
+        this.ctx.resume();
+    }
+    pause() {
+        this.ctx.suspend();
+    }
 }
-silentAudio.loop = true;
+let silentAudio = new SilentAudio();
 silentAudio.play();
-
 
 function startup() {
     let startInterval = setInterval(async () => {
@@ -171,7 +180,7 @@ function scrollNotifications(scrolltimes = 2, interval = 250) {
                     scrollcount = length / 20;
                 }
             } catch (error) {
-                console.log("scrolling error:", error);
+                console.log("🚀 YTBN ~ scrolling error:", error);
             }
         } else {
             //scrolling back up to load the missing images
@@ -252,7 +261,7 @@ async function exportDB(event) {
         });
         saveAs(blob, "ytbetternotifications-export.json");
     } catch (error) {
-        console.error('File export error: ' + error);
+        console.error('🚀 YTBN ~ File export error: ' + error);
     }
 }
 
@@ -288,7 +297,7 @@ async function importDB(event) {
         console.log("🚀 YTBN ~ Import complete.");
         return;
     } catch (error) {
-        console.error('File import error: ' + error);
+        console.error('🚀 YTBN ~ File import error: ' + error);
     }
 }
 
@@ -322,7 +331,7 @@ async function setupDB() {
     // });
 
     await db.open().catch(function (err) {
-        console.error(err.stack || err);
+        console.error("🚀 YTBN open", err.stack || err);
     });
 
     //db.delete();
@@ -687,7 +696,7 @@ async function togglereadAll(event) {
     }).then(result => {
         //console.log("checked:" + readvalue);
     }).catch(Dexie.ModifyError, function (e) {
-        console.error(e.failures.length + "failed to modify read value");
+        console.error("🚀 YTBN ~ failed to modify read value", e.failures.length);
         throw e;
     });
 
@@ -708,7 +717,7 @@ async function checkboxReadClicked(event) {
     let rowId = eventRow.dataset.id;
 
     if (rowId == "" || !rowId) {
-        console.log("Error while reading row ID");
+        console.log("🚀 YTBN ~ Error while reading row ID");
         return "Error while reading row ID";
     }
 
@@ -729,7 +738,7 @@ async function checkboxReadClicked(event) {
         }
         return result;
     }).catch(Dexie.ModifyError, function (e) {
-        console.error(e.failures.length + "failed to modify read value");
+        console.error("🚀 YTBN ~ failed to modify read value", e.failures.length);
         throw e;
     });
 
@@ -1323,7 +1332,7 @@ async function cleanLogsOverQuota() {
 async function sendEmailBatch(videoDictArray) {
 
     if (videoDictArray.length > dontSendEmailsOver) {
-        console.error(`You have over ${dontSendEmailsOver} new videos. The action of sending emails was cancelled.`);
+        console.error(`🚀 YTBN ~ You have over ${dontSendEmailsOver} new videos. The action of sending emails was cancelled.`);
         return;
     }
     if (videoDictArray.length == 0) {
@@ -1369,13 +1378,13 @@ async function sendEmailBatch(videoDictArray) {
             try {
                 return sendEmail(videoDict);
             } catch (e) {
-                console.log(`Error in sending email for ${videoDict} - ${e}`);
+                console.log(`🚀 YTBN ~ Error in sending email for ${videoDict} - ${e}`);
             }
         });
 
         await Promise.all(emailBatch)
             .catch(e => {
-                console.log(`Error in sending email for the batch ${i} - ${e}`);
+                console.log(`🚀 YTBN ~ Error in sending email for the batch ${i} - ${e}`);
             });
 
     }
@@ -1401,7 +1410,7 @@ async function sendEmail(videoDict) {
         return response.text();
     }).then(function (newhtml) {
 
-        //raw html for debug
+        //expose raw html for debugging purposes
         emailhtml = newhtml;
         // Convert the HTML string into a document object
         var parser = new DOMParser();
@@ -1453,7 +1462,7 @@ async function sendEmail(videoDict) {
                     videoDict.title = newTitle;
                 }
             } catch (error) {
-                console.warn(error);
+                console.warn("🚀 YTBN ~ videodict",error);
             }
 
 
@@ -1468,7 +1477,7 @@ async function sendEmail(videoDict) {
                 channelName = newChannelName;
             }
         } catch (error) {
-            console.warn(error);
+            console.warn("🚀 YTBN ~ channelname", error);
         }
 
         // Handle video length
@@ -1479,7 +1488,7 @@ async function sendEmail(videoDict) {
             vidLength = moment.utc(vidLength * 1000).format('HH:mm:ss').replace(/^(00:)/, "");
 
         } catch (error) {
-            console.warn(error);
+            console.warn("🚀 YTBN ~ vidlength",error);
         }
 
         //handle userimgurl
@@ -1494,7 +1503,7 @@ async function sendEmail(videoDict) {
                 }
             }
         } catch (error) {
-            console.warn(error);
+            console.warn("🚀 YTBN ~ userimg",error);
         }
 
         //handle videoDict.videoimgurl
@@ -1505,7 +1514,7 @@ async function sendEmail(videoDict) {
                 videoDict.videoimgurl = newVideoImgUrl;
             }
         } catch (error) {
-            console.warn(error);
+            console.warn("🚀 YTBN ~ videoimg",error);
         }
 
         // Handle channel url
@@ -1520,12 +1529,12 @@ async function sendEmail(videoDict) {
             return;
 
         } catch (error) {
-            console.warn(error);
+            console.warn("🚀 YTBN ~ channelurl",error);
         }
 
     }).catch(function (err) {
         // There was an error
-        console.warn('Something went wrong while fetching video data.', err);
+        console.warn('🚀 YTBN ~ Something went wrong while fetching video data.', err);
     });
 
     const emailSettings = await db.settings
@@ -1630,7 +1639,7 @@ async function sendEmail(videoDict) {
         //Retry sending email up to 3 times
         if ((emailSendResponse != "OK") && (emailSendResponse.statusText != "OK") && (emailSendResponse.result.labelIds.includes("SENT") == false)) {
             //Email send failure. Retrying...
-            console.log("sendEmail -> retryEmail", retryEmail);
+            console.log("🚀 YTBN ~ sendEmail -> retryEmail", retryEmail);
             retryEmail++;
         } else {
             //Email send success.
@@ -1667,7 +1676,7 @@ async function sendEmail(videoDict) {
             .equals(videoDict.log_number)
             .modify(logDict)
             .catch(Dexie.ModifyError, function (e) {
-                console.error(e.failures.length + "failed to modify read value");
+                console.error("🚀 YTBN ~ failed to modify read value", e.failures.length);
                 // throw e;
             });
     }
@@ -1718,7 +1727,7 @@ async function readSettings() {
         }
 
     } catch (error) {
-        console.log("readSettings error:", error);
+        console.log("🚀 YTBN ~ readSettings error:", error);
     }
 
 }
@@ -1859,7 +1868,7 @@ var emailGAPI = {
         }, function (error) {
             //LATER errors to the database instead
             emailGAPIReady = false;
-            console.log(JSON.stringify(error, null, 2));
+            console.log("🚀 YTBN ~ ",JSON.stringify(error, null, 2));
         });
     },
 
@@ -2309,7 +2318,7 @@ function displayTabbedOptions() {
             });
 
     } catch (error) {
-        console.log("displayTabbedOptions -> error", error);
+        console.log("🚀 YTBN ~ displayTabbedOptions -> error", error);
     }
 
     //Finally, unhide the options menu
