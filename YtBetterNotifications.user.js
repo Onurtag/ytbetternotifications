@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.16
+// @version         1.1.17
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
 // @match           https://www.youtube.com/reporthistory*
 // @grant           none
-// @require         https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.3/moment-with-locales.min.js
+// @require         https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.4/moment-with-locales.min.js
 // @require         https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.2/dexie.min.js
 // @require         https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js
 // @require         https://cdn.jsdelivr.net/npm/dexie-export-import@1.0.3/dist/dexie-export-import.min.js
@@ -63,7 +63,7 @@ LATER MAYBE: Email error log window with a table
 
 //Play silent audio to prevent background tab throttling
 //This might require "autoplay" to be turned on for the website
-//original source: https://github.com/t-mullen/silent-audio
+//original source: https://github.com/t-mullen/silent-audio/blob/master/src/index.js
 class SilentAudio {
     constructor() {
         this.ctx = new AudioContext();
@@ -131,6 +131,7 @@ function startup() {
 
                 }
             }
+            //LATER: this might not work correctly if the tab is throttled. Probably a better idea to use Now() etc.
             waiting += 100;
         }, 100);
         return;
@@ -138,7 +139,7 @@ function startup() {
     }, 100);
 }
 
-function scrollNotifications(scrolltimes = 2, interval = 175) {
+function scrollNotifications(scrolltimes = 2, interval = 600) {
 
     cleanLogsOverQuota();
 
@@ -146,55 +147,41 @@ function scrollNotifications(scrolltimes = 2, interval = 175) {
     silentAudio.play();
 
     let scrollcount = 0,
-        skipfirst = 0,
         nullcount = 0,
-        scrollingto = 0;
-    let maxnullcount = 9;
-    let scrollforwards = true;
+        maxnullcount = 9; //Minimum 4. Increase this if you have a small interval timer
+    let lastnotifnode;
 
     let scrollInterval = setInterval(() => {
-        if (skipfirst) {
-            skipfirst--;
-            return;
+        //verify and correct scroll count
+        let notificationcount = document.querySelectorAll("ytd-notification-renderer").length;
+        console.log("🚀 ~ scrollInterval ~ notificationcount", notificationcount);
+        if (scrollcount != notificationcount / 20) {
+            scrollcount = notificationcount / 20;
         }
-        if ((scrollcount <= scrolltimes) && (scrollforwards == 1)) {
+        if ((scrollcount <= scrolltimes) && (nullcount <= maxnullcount)) {
             try {
-                scrollingto += 5;
                 //document.querySelector('[menu-style="multi-page-menu-style-type-notifications"] ytd-continuation-item-renderer').scrollIntoView();
-                let scrollinghere = document.querySelectorAll("ytd-notification-renderer")[scrollingto];
-                if (scrollinghere == null) {
-                    if (nullcount >= maxnullcount) {
-                        //its the last page of the notifications panel (max 4 weeks)
-                        //clearInterval(scrollInterval);
-                        scrollforwards = false;
-                        return;
-                    }
+                let scrollinghere = document.querySelector("ytd-notification-renderer:last-of-type");
+                if (scrollinghere == lastnotifnode) {
                     nullcount++;
-                    scrollingto -= 5;
+                    if (nullcount == 3) {
+                        //Scroll up and down to trigger loading again
+                        document.querySelector("ytd-notification-renderer:first-of-type").scrollIntoView();
+                        setTimeout(() => {
+                            scrollinghere.scrollIntoView();
+                        }, 1);
+                    }
                 } else {
+                    //reset nullcount whenever we successfully do a scroll
+                    nullcount = 0;
+                    lastnotifnode = scrollinghere;
                     scrollinghere.scrollIntoView();
                 }
                 scrollcount++;
-                let length = document.querySelectorAll("ytd-notification-renderer").length;
-                if (scrollcount != length / 20) {
-                    scrollcount = length / 20;
-                }
             } catch (error) {
                 console.log("🚀 YTBN ~ scrolling error:", error);
             }
         } else {
-            //scrolling back up to load the missing images
-            if (scrollforwards == true) {
-                scrollforwards = false;
-            }
-            if ((scrollforwards == false) && (scrollingto >= 5)) {
-                scrollingto -= 5;
-                //document.querySelector('[menu-style="multi-page-menu-style-type-notifications"] ytd-continuation-item-renderer').scrollIntoView();
-                let scrollinghere = document.querySelectorAll("ytd-notification-renderer")[scrollingto];
-                scrollinghere.scrollIntoView();
-                return;
-            }
-
             //---Scrolling is finished---
             //---Scrolling is finished---
             //---Scrolling is finished---
@@ -261,7 +248,7 @@ async function exportDB(event) {
         });
         saveAs(blob, "ytbetternotifications-export.json");
     } catch (error) {
-        console.error('🚀 YTBN ~ File export error: ' + error);
+        console.error('🚀 YTBN ~ File export error: ', error);
     }
 }
 
@@ -280,7 +267,7 @@ async function importDB(event) {
             throw new Error(`Only files can be input here.`);
         }
 
-        console.log("🚀 YTBN ~ Importing file: " + file.name);
+        console.log("🚀 YTBN ~ Importing file: ", file.name);
         cleanTable();
         showSpinner();
         document.querySelector("#notificationOptions").remove();
@@ -297,7 +284,7 @@ async function importDB(event) {
         console.log("🚀 YTBN ~ Import complete.");
         return;
     } catch (error) {
-        console.error('🚀 YTBN ~ File import error: ' + error);
+        console.error('🚀 YTBN ~ File import error: ', error);
     }
 }
 
@@ -441,7 +428,7 @@ function loadAll(event) {
     //Enable the smaller notifications panel which loads notifications faster
     document.querySelector("#smallernotpanel").disabled = false;
     buttonElement.click();
-    scrollNotifications(6666, 300);
+    scrollNotifications(6666);
 }
 
 function livetransparency(event) {
@@ -474,14 +461,19 @@ function cleanTable() {
 
 async function saveNotifications() {
 
-    let nodeArray = Array.from(document.querySelectorAll("ytd-notification-renderer"));
+    //let nodeArray = Array.from(document.querySelectorAll("ytd-notification-renderer"));
+    //Re-parse the notifications container node to work on it. Usual methods like .children, .firstElementChild are set to null on youtube's custom nodes.
+    let parser = new DOMParser();
+    let container = parser.parseFromString(document.querySelector("ytd-notification-renderer").parentElement.outerHTML, 'text/html');
+    container = container.body.firstElementChild;
+    let nodeArray = [...container.querySelectorAll("ytd-notification-renderer")];
 
     let newCount = 0;
     let emailDictArray = [];
     let promiseResults = await Promise.all(nodeArray.map(async (element) => {
 
         let notVideo = false;
-        let rowUrl = element.firstElementChild.href;
+        let rowUrl = element.firstElementChild?.href;
 
         //if the notification thumbnail images aren't there, skip.
         let userImg = element.querySelectorAll("img")[0].src;
@@ -1369,8 +1361,8 @@ async function sendEmailBatch(videoDictArray) {
 
     console.log("🚀 YTBN ~ sendEmailBatch -> emailSendArray", emailSendArray);
 
-    //Email batch size. Keep the number low as a large batch number can be detected as spam.
-    let emailBatchSize = 2;
+    //Email batch size. Keeping this small should help prevent sent emails from being detected as spam.
+    let emailBatchSize = 3;
     for (let i = 0; i < emailSendArray.length; i += emailBatchSize) {
 
         //Send single email
@@ -1378,13 +1370,13 @@ async function sendEmailBatch(videoDictArray) {
             try {
                 return sendEmail(videoDict);
             } catch (e) {
-                console.log(`🚀 YTBN ~ Error in sending email for ${videoDict} - ${e}`);
+                console.log(`🚀 YTBN ~ Error in sending email for`, videoDict, e);
             }
         });
 
         await Promise.all(emailBatch)
             .catch(e => {
-                console.log(`🚀 YTBN ~ Error in sending email for the batch ${i} - ${e}`);
+                console.log(`🚀 YTBN ~ Error in sending email for the batch`, i, e);
             });
 
     }
@@ -1462,7 +1454,7 @@ async function sendEmail(videoDict) {
                     videoDict.title = newTitle;
                 }
             } catch (error) {
-                console.warn("🚀 YTBN ~ videodict",error);
+                console.warn("🚀 YTBN ~ videodict", error);
             }
 
 
@@ -1488,7 +1480,7 @@ async function sendEmail(videoDict) {
             vidLength = moment.utc(vidLength * 1000).format('HH:mm:ss').replace(/^(00:)/, "");
 
         } catch (error) {
-            console.warn("🚀 YTBN ~ vidlength",error);
+            console.warn("🚀 YTBN ~ vidlength", error);
         }
 
         //handle userimgurl
@@ -1503,7 +1495,7 @@ async function sendEmail(videoDict) {
                 }
             }
         } catch (error) {
-            console.warn("🚀 YTBN ~ userimg",error);
+            console.warn("🚀 YTBN ~ userimg", error);
         }
 
         //handle videoDict.videoimgurl
@@ -1514,7 +1506,7 @@ async function sendEmail(videoDict) {
                 videoDict.videoimgurl = newVideoImgUrl;
             }
         } catch (error) {
-            console.warn("🚀 YTBN ~ videoimg",error);
+            console.warn("🚀 YTBN ~ videoimg", error);
         }
 
         // Handle channel url
@@ -1529,7 +1521,7 @@ async function sendEmail(videoDict) {
             return;
 
         } catch (error) {
-            console.warn("🚀 YTBN ~ channelurl",error);
+            console.warn("🚀 YTBN ~ channelurl", error);
         }
 
     }).catch(function (err) {
@@ -1868,7 +1860,7 @@ var emailGAPI = {
         }, function (error) {
             //LATER errors to the database instead
             emailGAPIReady = false;
-            console.log("🚀 YTBN ~ ",JSON.stringify(error, null, 2));
+            console.log("🚀 YTBN ~ ", JSON.stringify(error, null, 2));
         });
     },
 
