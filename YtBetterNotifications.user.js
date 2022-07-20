@@ -164,12 +164,13 @@ function scrollNotifications(scrolltimes = 2, interval = 600) {
                 let scrollinghere = document.querySelector("ytd-notification-renderer:last-of-type");
                 if (scrollinghere == lastnotifnode) {
                     nullcount++;
-                    if (nullcount == 3) {
+                    console.log("🚀 ~ scrollInterval ~ nullcount", nullcount);
+                    if (nullcount % 3 == 0) {
                         //Scroll up and down to trigger loading again
                         document.querySelector("ytd-notification-renderer:first-of-type").scrollIntoView();
                         setTimeout(() => {
                             scrollinghere.scrollIntoView();
-                        }, 1);
+                        }, 50);
                     }
                 } else {
                     //reset nullcount whenever we successfully do a scroll
@@ -253,7 +254,10 @@ async function exportDB(event) {
 }
 
 function fileInputOnchange(event) {
-    selectedfile = event.target.files[0];
+    let files = event.target?.files || event.target?.$?.nativeInput?.files || null;
+    if (files) {
+        selectedfile = files[0];
+    }
 }
 
 async function importDB(event) {
