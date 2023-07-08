@@ -595,18 +595,10 @@ function displayNotification(currDict) {
 
     const dummyHTML = `
     <div data-id="DUMMYDATASETID" class="notificationsRow">
-        <div class="notifRowItem notcol1">
-            ROWDUMMYROW1
-        </div>
-        <div class="notifRowItem notcol2">
-            ROWDUMMYROW2
-        </div>
-        <div class="notifRowItem notcol3">
-            ROWDUMMYROW3
-        </div>
-        <div class="notifRowItem notcol4">
-            ROWDUMMYROW4
-        </div>
+        <div class="notifRowItem notcol1">ROWDUMMYROW1</div>
+        <div class="notifRowItem notcol2">ROWDUMMYROW2</div>
+        <div class="notifRowItem notcol3">ROWDUMMYROW3</div>
+        <div class="notifRowItem notcol4">ROWDUMMYROW4</div>
         <div class="notifRowItem notcol5">
             <tp-yt-paper-checkbox noink READCHECKED>Read</tp-yt-paper-checkbox>
         </div>
@@ -797,7 +789,6 @@ function addStyles() {
 
     let newstyle = document.createElement("style");
     newstyle.innerHTML = `
-    
     #outerNotifications {
         background-color: rgb(15, 15, 15);
         border: 2px rgb(15, 15, 15) solid;
@@ -835,19 +826,19 @@ function addStyles() {
         flex-direction: column;
         margin-top: 12px;
     }
-    
+
     #sidebuttonsBottom {
         display: flex;
         flex-direction: column;
         margin-top: auto;
         margin-bottom: 1em;
     }
-    
+
     #innerNotifications {
         display: flex;
         flex-direction: column;
         overflow: auto;
-        height: 97%;
+        height: 90%;
         margin-top: 10px;
         margin-left: 154px;
         margin-right: 8px;
@@ -873,6 +864,7 @@ function addStyles() {
         align-items: center;
         font-size: 1.5em;
     }
+
     /* same as .notificationsRow */
 
     #pagingButtons {
@@ -896,7 +888,8 @@ function addStyles() {
     }
 
     /*Set table css */
-    .notcol1, .notcol4 {
+    .notcol1,
+    .notcol4 {
         height: 120px;
         align-items: center;
         text-align: center;
@@ -906,23 +899,28 @@ function addStyles() {
         flex-grow: 0.9;
         margin-left: 0px;
     }
+
     .notcol2 {
         flex-grow: 3;
     }
+
     .notcol3 {
         text-align: center;
         flex-grow: .8;
         margin-left: 6px;
     }
+
     .notcol4 {
         flex-grow: 1;
     }
+
     .notcol5 {
         flex-grow: 0.7;
         margin-right: 0px;
     }
 
-    .notifRowItem img, .notifRowItem > a.nvimgc {
+    .notifRowItem img,
+    .notifRowItem > a.nvimgc {
         width: 100%;
         height: 100%;
         object-fit: scale-down;
@@ -937,6 +935,7 @@ function addStyles() {
         font-size: .85em;
         margin-left: 14px;
     }
+
     #outerNotifications tp-yt-paper-checkbox #checkboxLabel {
         color: #ddd;
         /*width: 66%;*/
@@ -946,12 +945,12 @@ function addStyles() {
     #sidebuttons paper-ripple {
         color: rgba(0, 0, 0, 0);
     }
-    
+
     #sidebuttonsTop #searchContainer {
         display: flex;
         flex-direction: row;
     }
-    
+
     #sidebarSearchInput {
         width: 89px;
         padding-right: 22px;
@@ -963,7 +962,7 @@ function addStyles() {
         padding-left: 4px;
         border-radius: 2px;
     }
-    
+
     #sidebarSearchInput:focus {
         border: 1px solid #1C62B9;
     }
@@ -990,16 +989,13 @@ function addStyles() {
 
     .ytb-status-hidden {
         visibility: hidden;
-    }
-
-    `;
+    }`;
     document.head.append(newstyle);
 
     //POPUP options css
     newstyle = document.createElement("style");
     newstyle.id = "tabbedoptionscss";
     newstyle.innerHTML = `
-
     .hideSMTPJS {
         display: none;
     }
@@ -1012,7 +1008,7 @@ function addStyles() {
         left: -100%;
         right: 0;
         bottom: 0;
-        background-color: rgba(0,0,0,0.5);
+        background-color: rgba(0, 0, 0, 0.5);
         z-index: 2;
         cursor: pointer;
     }
@@ -1043,28 +1039,28 @@ function addStyles() {
         font-size: 1.2em;
         margin: 4px auto 4px auto;
     }
-    
+
     #notificationOptions .material-tabs {
         display: block;
         float: left;
         width: 100%;
         height: 100%;
     }
-    
+
     #notificationOptions .visible {
         position: relative;
         opacity: 1;
         transition: opacity .35s ease;
         z-index: 3;
     }
-    
+
     #notificationOptions .hidden {
         position: absolute;
         opacity: 0;
         transition: opacity 0s ease;
         z-index: 0;
     }
-    
+
     #notificationOptions [class*="tabbed-section-"] {
         margin: 8px 16px 16px 16px;
         overflow-y: auto;
@@ -1074,7 +1070,7 @@ function addStyles() {
         display: flex;
         flex-direction: column;
     }
-    
+
     #notificationOptions .tabbed-section__selector {
         position: relative;
         width: 100%;
@@ -1082,7 +1078,7 @@ function addStyles() {
         float: left;
         z-index: 5;
     }
-    
+
     [class*="-tab-"] {
         line-height: 350%;
         float: left;
@@ -1094,11 +1090,11 @@ function addStyles() {
         font-size: 14px;
         cursor: pointer;
     }
-    
+
     [class*="-tab-"].active {
         /*color: #4F2CCA;*/
     }
-    
+
     .tabbed-section__highlighter {
         position: absolute;
         z-index: 10;
@@ -1112,19 +1108,19 @@ function addStyles() {
         left: 0;
         transition: transform .13s ease;
     }
-    
-    .tabbed-section__selector-tab-3.active~.tabbed-section__highlighter {
+
+    .tabbed-section__selector-tab-3.active ~ .tabbed-section__highlighter {
         transform: translateX(200%);
     }
-    
-    .tabbed-section__selector-tab-2.active~.tabbed-section__highlighter {
+
+    .tabbed-section__selector-tab-2.active ~ .tabbed-section__highlighter {
         transform: translateX(100%);
     }
-    
-    .tabbed-section__selector-tab-1.active~.tabbed-section__highlighter {
+
+    .tabbed-section__selector-tab-1.active ~ .tabbed-section__highlighter {
         transform: translateX(0);
     }
-    
+
     #notificationOptions .divider {
         background: rgba(0, 0, 0, .1);
         position: relative;
@@ -1136,7 +1132,7 @@ function addStyles() {
         padding: 0;
         overflow: hidden;
     }
-    
+
     #importDatabaseButton paper-ripple {
         display: none;
         transform: none;
@@ -1147,7 +1143,6 @@ function addStyles() {
         border: 1px #f009 solid;
         filter: drop-shadow(0px 0px 4px #ff3e3e);
     }
-
     `;
     document.head.append(newstyle);
     //document.querySelector("#tabbedoptionscss").disabled = false;
@@ -2040,28 +2035,31 @@ function sidebarInputkey(event) {
 async function setupPaginationButtons() {
 
     let pagingButtonsDiv = document.createElement("div");
-    let divHTML = `
-    <div id="pagingButtons">
-        <div class="notifRowItem" style="flex-grow: 0.8;">
-            <tp-yt-paper-button id="firstpageButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 12px 12px;">First Page</tp-yt-paper-button>
+    //LATER instead of using a fixed position, put the buttons and innernotifications in another container div
+    pagingButtonsDiv.setAttribute("style", `
+        position: fixed;
+        width: 88%;
+        bottom: 0px;
+        margin-left: 4px;
+        margin-bottom: -8px;
+    `);
+    let divHTML = `<div id="pagingButtons">
+        <div class="notifRowItem" style="flex-grow: 0.8">
+            <tp-yt-paper-button id="firstpageButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">First Page</tp-yt-paper-button>
         </div>
-        <div class="notifRowItem" style="flex-grow: 1;">
+        <div class="notifRowItem" style="flex-grow: 1"></div>
+        <div class="notifRowItem">
+            <tp-yt-paper-button id="previouspageButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">Previous Page</tp-yt-paper-button>
+        </div>
+        <div class="notifRowItem" style="flex-grow: 0.5">
+            <div id="pageNumber" style="text-align: center; font-size: 1.5em">CURRENTPAGENUMBER</div>
         </div>
         <div class="notifRowItem">
-            <tp-yt-paper-button id="previouspageButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 12px 12px;">Previous Page</tp-yt-paper-button>
+            <tp-yt-paper-button id="nextpageButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">Next Page</tp-yt-paper-button>
         </div>
-        <div class="notifRowItem" style="flex-grow: 0.5;">
-            <div id="pageNumber" style="text-align: center;font-size: 1.5em;">
-                CURRENTPAGENUMBER
-            </div>
-        </div>
-        <div class="notifRowItem">
-            <tp-yt-paper-button id="nextpageButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 12px 12px;">Next Page</tp-yt-paper-button>
-        </div>
-        <div class="notifRowItem" style="flex-grow: 1;">
-        </div>
-        <div class="notifRowItem" style="flex-grow: 0.8;">
-            <tp-yt-paper-button id="lastpageButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 12px 12px;">Last Page</tp-yt-paper-button>
+        <div class="notifRowItem" style="flex-grow: 1"></div>
+        <div class="notifRowItem" style="flex-grow: 0.8">
+            <tp-yt-paper-button id="lastpageButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">Last Page</tp-yt-paper-button>
         </div>
     </div>
     `;
@@ -2097,8 +2095,7 @@ function displayTabbedOptions() {
     //Hide the options menu for now
     optionsDiv.style.visibility = false;
 
-    const optionsHTML = `
-    <div id="backgroundOverlay"></div>
+    const optionsHTML = `<div id="backgroundOverlay"></div>
     <div class="material-tabs">
         <div class="tabbed-section__selector">
             <a class="tabbed-section__selector-tab-1 active">GENERAL</a>
@@ -2108,51 +2105,51 @@ function displayTabbedOptions() {
         </div>
 
         <div class="tabbed-section-1 visible">
-            <tp-yt-paper-button id="loadallButton" raised class="" style="margin-top:auto;">LOAD ALL NOTIFICATIONS</tp-yt-paper-button>
-            <tp-yt-paper-checkbox id="optionRelativeTimeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size:54px;font-size: 12pt;margin: 50px auto 5px auto;">Display relative time</tp-yt-paper-checkbox>
-            <tp-yt-paper-button id="saveButtonOptions" raised class="" style="margin-top:auto;margin-bottom:0px;">SAVE</tp-yt-paper-button>
-            <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top:14px;margin-bottom:0px;">CLOSE</tp-yt-paper-button>
+            <tp-yt-paper-button id="loadallButton" raised class="" style="margin-top: auto">LOAD ALL NOTIFICATIONS</tp-yt-paper-button>
+            <tp-yt-paper-checkbox id="optionRelativeTimeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin: 50px auto 5px auto">Display relative time</tp-yt-paper-checkbox>
+            <tp-yt-paper-button id="saveButtonOptions" raised class="" style="margin-top: auto; margin-bottom: 0px">SAVE</tp-yt-paper-button>
+            <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top: 14px; margin-bottom: 0px">CLOSE</tp-yt-paper-button>
         </div>
         <div class="tabbed-section-2 hidden">
-            <div style="display: flex;flex-direction: column; height: 100%;">
-                <h1 style="margin: 50px auto 30px auto;border-radius: 4px;">Gmail API Setup</h1>
+            <div style="display: flex; flex-direction: column; height: 100%">
+                <h1 style="margin: 50px auto 30px auto; border-radius: 4px">Gmail API Setup</h1>
                 <tp-yt-paper-textarea id="emailGAPIClientID" label="Client ID (Example: xxxx-xxxxxxxx.apps.googleusercontent.com)"></tp-yt-paper-textarea>
                 <tp-yt-paper-textarea id="emailGAPIClientKey" label="API Key or Secret (Example: xxxxxxxxxxxxxx)"></tp-yt-paper-textarea>
-                <tp-yt-paper-button id="authButtonEmail" raised class="" style="margin-top:14px;margin-bottom:0px;display:none;">AUTHORIZE</tp-yt-paper-button>
-                <tp-yt-paper-button id="signoutButtonEmail" raised class="" style="margin-top: 20px; margin-bottom: 20px; display:none;">SIGN OUT</tp-yt-paper-button>
-                <h1 style="margin: 50px auto 30px auto;border-radius: 4px;">Email Setup</h1>
+                <tp-yt-paper-button id="authButtonEmail" raised class="" style="margin-top: 14px; margin-bottom: 0px; display: none">AUTHORIZE</tp-yt-paper-button>
+                <tp-yt-paper-button id="signoutButtonEmail" raised class="" style="margin-top: 20px; margin-bottom: 20px; display: none">SIGN OUT</tp-yt-paper-button>
+                <h1 style="margin: 50px auto 30px auto; border-radius: 4px">Email Setup</h1>
                 <tp-yt-paper-textarea id="emailTo" label="To (Example: MyUsername@gmail.com)"></tp-yt-paper-textarea>
                 <tp-yt-paper-textarea id="emailFrom" label="From (Example: MyUsername@gmail.com)"></tp-yt-paper-textarea>
                 <tp-yt-paper-textarea id="emailSubject" label="Subject (Can use DUMMY values. Example: DUMMYCHANNELNAME has a new video: DUMMYVIDEOTITLE)"></tp-yt-paper-textarea>
                 <tp-yt-paper-textarea id="emailBody" label="Body (Can use HTML as well as DUMMY values.)"></tp-yt-paper-textarea>
                 <h3>❗❗❗ DUMMYVIDEOTITLE, DUMMYVIDEOIMAGEURL, DUMMYVIDEOLENGTH, DUMMYVIDEOURL, DUMMYCHANNELIMAGEURL, DUMMYCHANNELNAME, DUMMYCHANNELURL, DUMMYLIVEICON strings will be replaced with their respective values when an email is sent. Only for the Subject and the Body.</h3>
-                <tp-yt-paper-checkbox id="sendEmailCheckbox" noink style="--tp-yt-paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Send Email on New Notifications</tp-yt-paper-checkbox>
-                <tp-yt-paper-button id="saveButtonEmail" raised class="" style="margin-top:14px;margin-bottom:0px;">SAVE</tp-yt-paper-button>
-                <tp-yt-paper-button id="sendEmailButton" raised class="" style="margin-top:14px;margin-bottom:14px;">SEND TEST EMAILS</tp-yt-paper-button>
-                <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:8px;">CLOSE</tp-yt-paper-button>
-                <br class="hideSMTPJS">
-                <h1 class="hideSMTPJS" style="margin: 50px auto 30px auto;color: crimson;border: 1px red solid;border-radius: 4px;">Below Options are for SMTPJS. Please Ignore them.</h1>
-                <br class="hideSMTPJS">
+                <tp-yt-paper-checkbox id="sendEmailCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin-top: 8px">Send Email on New Notifications</tp-yt-paper-checkbox>
+                <tp-yt-paper-button id="saveButtonEmail" raised class="" style="margin-top: 14px; margin-bottom: 0px">SAVE</tp-yt-paper-button>
+                <tp-yt-paper-button id="sendEmailButton" raised class="" style="margin-top: 14px; margin-bottom: 14px">SEND TEST EMAILS</tp-yt-paper-button>
+                <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top: auto; margin-bottom: 8px">CLOSE</tp-yt-paper-button>
+                <br class="hideSMTPJS" />
+                <h1 class="hideSMTPJS" style="margin: 50px auto 30px auto; color: crimson; border: 1px red solid; border-radius: 4px">Below Options are for SMTPJS. Please Ignore them.</h1>
+                <br class="hideSMTPJS" />
                 <tp-yt-paper-textarea class="hideSMTPJS" id="emailHost" label="Host (Example: smtp.gmail.com)"></tp-yt-paper-textarea>
                 <tp-yt-paper-textarea class="hideSMTPJS" id="emailUsername" label="Username (Example: MyUsername or MyUsername@gmail.com)"></tp-yt-paper-textarea>
                 <tp-yt-paper-textarea class="hideSMTPJS" id="emailPassword" label="Password (Example: MyPassword)"></tp-yt-paper-textarea>
-                <tp-yt-paper-checkbox class="hideSMTPJS" id="useSecureTokenCheckbox" noink style="--tp-yt-paper-checkbox-ink-size:54px;font-size: 12pt;margin-top: 8px;">Use Security Token Instead (visit smtpjs.com)</tp-yt-paper-checkbox>
+                <tp-yt-paper-checkbox class="hideSMTPJS" id="useSecureTokenCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin-top: 8px">Use Security Token Instead (visit smtpjs.com)</tp-yt-paper-checkbox>
                 <tp-yt-paper-textarea class="hideSMTPJS" id="emailSecureToken" label="Secure Token (Example: C973D7AD-F097-4B95-91F4-40ABC5567812)" disabled></tp-yt-paper-textarea>
-                <tp-yt-paper-button class="hideSMTPJS closeButtonSettings" raised style="margin-top:auto;margin-bottom:0px;">CLOSE</tp-yt-paper-button>
+                <tp-yt-paper-button class="hideSMTPJS closeButtonSettings" raised style="margin-top: auto; margin-bottom: 0px">CLOSE</tp-yt-paper-button>
             </div>
         </div>
         <div class="tabbed-section-3 hidden">
-            <div style="text-align:center;font-size:14pt;margin-top: auto;margin-bottom: 10px;">Be careful with your exported passwords and secrets.</div>
+            <div style="text-align: center; font-size: 14pt; margin-top: auto; margin-bottom: 10px">Be careful with your exported passwords and secrets.</div>
             <tp-yt-paper-button id="exportDatabaseButton" raised class="" style="">EXPORT DATABASE</tp-yt-paper-button>
-            <input type="file" id="importinput" name="importinput" accept=".json" style="width:50%;margin-left:auto;margin-right: auto;">
+            <input type="file" id="importinput" name="importinput" accept=".json" style="width: 50%; margin-left: auto; margin-right: auto" />
             <tp-yt-paper-button for="importinput" id="importDatabaseButton" class="" style="">IMPORT DATABASE</tp-yt-paper-button>
-            <br>
-            <br>
-            <br>
-            <tp-yt-paper-button id="discardLogsButton" raised class="" style="margin-top:auto;">CLEAR ALL LOGS</tp-yt-paper-button>
-            <tp-yt-paper-button id="discardNotificationsButton" raised class="" style="margin-top:50px;color: #ff3a3a;">CLEAR ALL NOTIFICATIONS</tp-yt-paper-button>
-            <tp-yt-paper-button id="discardSettingsButton" raised class="" style="margin-top:12px;color: #ff3a3a;">CLEAR ALL SETTINGS</tp-yt-paper-button>
-            <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top:auto;margin-bottom:0px;">CLOSE</tp-yt-paper-button>
+            <br />
+            <br />
+            <br />
+            <tp-yt-paper-button id="discardLogsButton" raised class="" style="margin-top: auto">CLEAR ALL LOGS</tp-yt-paper-button>
+            <tp-yt-paper-button id="discardNotificationsButton" raised class="" style="margin-top: 50px; color: #ff3a3a">CLEAR ALL NOTIFICATIONS</tp-yt-paper-button>
+            <tp-yt-paper-button id="discardSettingsButton" raised class="" style="margin-top: 12px; color: #ff3a3a">CLEAR ALL SETTINGS</tp-yt-paper-button>
+            <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top: auto; margin-bottom: 0px">CLOSE</tp-yt-paper-button>
         </div>
     </div>
     `;
