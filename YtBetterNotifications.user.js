@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.17
+// @version         1.1.19
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -43,7 +43,7 @@ const regexImageURLtoID = /https?:\/\/i.ytimg.com\/(vi|vi_webp)\/(.*?)\/.*?.(jpg
 /*
 TODO: Increment Version Number
 
-
+LATER: Link channel image to channel if I have the data
 LATER: Add a filter/search box/tab/etc
 LATER: Add a blocking fullscreen div to protect the native notifications popup window while its loading pages.
 LATER: Add a "Saved!" popup when you click save
@@ -139,7 +139,7 @@ function startup() {
     }, 100);
 }
 
-function scrollNotifications(scrolltimes = 2, interval = 600) {
+function scrollNotifications(scrolltimes = 3, interval = 490) {
 
     cleanLogsOverQuota();
 
@@ -148,55 +148,81 @@ function scrollNotifications(scrolltimes = 2, interval = 600) {
 
     let scrollcount = 0,
         nullcount = 0,
-        maxnullcount = 9; //Minimum 4. Increase this if you have a small interval timer
-    let lastnotifnode;
+        fixCount = 0,
+        maxnullcount = 12, //Minimum 4. Increase this if you have a small interval timer
+        finalAmount = -1,
+        startedChecking = false;
+    let prev_lastNode;
 
     let scrollInterval = setInterval(() => {
         //verify and correct scroll count
         let notificationcount = document.querySelectorAll("ytd-notification-renderer").length;
-        console.log("🚀 ~ scrollInterval ~ notificationcount", notificationcount);
+        console.log("🚀 YTBN ~ scrollInterval ~ notificationcount", notificationcount);
         if (scrollcount != notificationcount / 20) {
             scrollcount = notificationcount / 20;
         }
-        if ((scrollcount <= scrolltimes) && (nullcount <= maxnullcount)) {
+        if (!startedChecking && (scrollcount <= scrolltimes) && (nullcount <= maxnullcount)) {
             try {
                 //document.querySelector('[menu-style="multi-page-menu-style-type-notifications"] ytd-continuation-item-renderer').scrollIntoView();
-                let scrollinghere = document.querySelector("ytd-notification-renderer:last-of-type");
-                if (scrollinghere == lastnotifnode) {
+                let lastNode = document.querySelector("ytd-notification-renderer:last-of-type");
+                if (lastNode == prev_lastNode) {
                     nullcount++;
-                    console.log("🚀 ~ scrollInterval ~ nullcount", nullcount);
-                    if (nullcount % 3 == 0) {
+                    console.log("🚀 YTBN ~ scrollInterval ~ nullcount", nullcount);
+                    if (nullcount % 2 == 0) {
                         //Scroll up and down to trigger loading again
                         document.querySelector("ytd-notification-renderer:first-of-type").scrollIntoView();
-                        setTimeout(() => {
-                            scrollinghere.scrollIntoView();
-                        }, 50);
                     }
                 } else {
                     //reset nullcount whenever we successfully do a scroll
                     nullcount = 0;
-                    lastnotifnode = scrollinghere;
-                    scrollinghere.scrollIntoView();
+                    prev_lastNode = lastNode;
                 }
+                lastNode.scrollIntoView();
                 scrollcount++;
             } catch (error) {
                 console.log("🚀 YTBN ~ scrolling error:", error);
             }
         } else {
-            //---Scrolling is finished---
-            //---Scrolling is finished---
-            //---Scrolling is finished---
-            clearInterval(scrollInterval);
-            //Continue the rest of the loading process
-            continuing();
+            //---FORWARD Scrolling finished---
+            //---FORWARD Scrolling finished---
+            //---FORWARD Scrolling finished---
+            startedChecking = true;
+            // console.log("🚀 YTBN ~ attempting to fix:", fixCount++);
+            //Scroll lazy nodes to wake them up (load lazy loaded images & urls)
+            let loadedNotifs = document.querySelectorAll("ytd-notification-renderer");
+            if (finalAmount == -1) {
+                finalAmount = loadedNotifs.length;
+            }
+            // loadedNotifs.slice(0, finalAmount); //requires [...blabla]
+            let count = 0;
+            for (let index = 0; index < finalAmount; index++) {
+                const element = loadedNotifs[index];
+                if (element.querySelector("img[src]")) {
+                    count++;
+                } else {
+                    // console.log("🚀 YTBN ~ attempting to fix:", element.innerText, index);
+                    element.scrollIntoView();
+                }
+            }
+            fixCount++;
+            if (count == finalAmount) {
+                //---ALL Scrolling finished---
+                //---ALL Scrolling finished---
+                //---ALL Scrolling finished---
+                console.log("🚀 YTBN ~ All good. Notification count & fix count:", count, fixCount);
+                //Stop interval
+                clearInterval(scrollInterval);
+                //Continue the rest of the loading process
+                continuing(count);
+            }
         }
     }, interval);
 }
 
-function continuing() {
+function continuing(nC) {
 
     //Async update the notifications database
-    saveNotifications().then(result => {
+    saveNotifications(nC).then(result => {
 
         //Close notifications panel
         buttonElement.click();
@@ -463,7 +489,7 @@ function cleanTable() {
     document.querySelector("#innerNotifications").innerHTML = "";
 }
 
-async function saveNotifications() {
+async function saveNotifications(nC) {
 
     //let nodeArray = Array.from(document.querySelectorAll("ytd-notification-renderer"));
     //Re-parse the notifications container node to work on it. Usual methods like .children, .firstElementChild are set to null on youtube's custom nodes.
@@ -471,6 +497,7 @@ async function saveNotifications() {
     let container = parser.parseFromString(document.querySelector("ytd-notification-renderer").parentElement.outerHTML, 'text/html');
     container = container.body.firstElementChild;
     let nodeArray = [...container.querySelectorAll("ytd-notification-renderer")];
+    nodeArray = nodeArray.slice(0, nC);
 
     let newCount = 0;
     let emailDictArray = [];
@@ -480,17 +507,18 @@ async function saveNotifications() {
         let rowUrl = element.firstElementChild?.href;
 
         //if the notification thumbnail images aren't there, skip.
-        let userImg = element.querySelectorAll("img")[0].src;
-        if (!userImg) {
-            return "userimagedidnotload";
-        }
+        let userImg = element.querySelectorAll("img")[0]?.src || "";
+        // if (!userImg) {
+        //     debugger;
+        //     return "userimagedidnotload";
+        // }
 
-        let videoImage = element.querySelectorAll("img")[1].src;
-        if (!videoImage) {
-            return "videoimagedidnotload";
-        }
+        let videoImage = element.querySelectorAll("img")[1]?.src || "";
+        // if (!videoImage) {
+        //     return "videoimagedidnotload";
+        // }
 
-        if (rowUrl == "") {
+        if (rowUrl == "" && videoImage) {
             //if the notification is not a video link, mark as notvideo (comment)
             //and instead parse the video url from the videoimgurl
             notVideo = true;
@@ -563,6 +591,8 @@ async function saveNotifications() {
 
         return dbput;
     }));
+
+    console.log("🚀 YTBN ~ saveNotifications ~ promiseResults:", promiseResults);
 
     //get db size and set max pages
     const itemcount = await db.notifications
@@ -1222,7 +1252,8 @@ function addStyles() {
     newstyle.id = "smallernotpanel";
     newstyle.innerHTML = `
     ytd-notification-renderer {
-        height: 20px;
+        height: 10px;
+        padding: 4px 4px;
     }
     
     /*hide notifications panel*/
@@ -1611,7 +1642,7 @@ async function sendEmail(videoDict) {
                 return message;
             });
 
-        } else {
+        } else if (emailSettings[0].value.Password) {
 
             emailSendResponse = await Email.send({
                 Host: emailSettings[0].value.Host,
@@ -1625,6 +1656,8 @@ async function sendEmail(videoDict) {
                 console.log("🚀 YTBN ~ Email.send response: " + message);
                 return message;
             });
+        } else {
+            console.error("❗❗❗❗❗ 🚀 YTBN ~ Email.send ERROR: ALL EMAIL SEND METHODS FAILED! Try re-authenticating gmail in options." + message);
         }
 
         //Retry sending email up to 3 times
