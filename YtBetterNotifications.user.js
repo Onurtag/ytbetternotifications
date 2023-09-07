@@ -31,6 +31,7 @@ const MAX_LOG_SIZE = 600,
     LOG_PURGE_AMOUNT = 100;
 
 ytbnDebugEmail = false;
+console.time("YTBN");
 console.log("🚀 YTBN ~ ytbnDebugEmail", ytbnDebugEmail);
 
 let dontSendEmailsOver = 150;
@@ -139,7 +140,7 @@ function startup() {
     }, 100);
 }
 
-function scrollNotifications(scrolltimes = 3, interval = 490) {
+function scrollNotifications(scrolltimes = 2, interval = 195) {
 
     cleanLogsOverQuota();
 
@@ -149,7 +150,8 @@ function scrollNotifications(scrolltimes = 3, interval = 490) {
     let scrollcount = 0,
         nullcount = 0,
         fixCount = 0,
-        maxnullcount = 12, //Minimum 4. Increase this if you have a small interval timer
+        toBeFixed = 0,
+        maxnullcount = 34, //Minimum 4. Increase this if you have a small interval timer
         finalAmount = -1,
         startedChecking = false;
     let prev_lastNode;
@@ -157,7 +159,6 @@ function scrollNotifications(scrolltimes = 3, interval = 490) {
     let scrollInterval = setInterval(() => {
         //verify and correct scroll count
         let notificationcount = document.querySelectorAll("ytd-notification-renderer").length;
-        console.log("🚀 YTBN ~ scrollInterval ~ notificationcount", notificationcount);
         if (scrollcount != notificationcount / 20) {
             scrollcount = notificationcount / 20;
         }
@@ -167,7 +168,6 @@ function scrollNotifications(scrolltimes = 3, interval = 490) {
                 let lastNode = document.querySelector("ytd-notification-renderer:last-of-type");
                 if (lastNode == prev_lastNode) {
                     nullcount++;
-                    console.log("🚀 YTBN ~ scrollInterval ~ nullcount", nullcount);
                     if (nullcount % 2 == 0) {
                         //Scroll up and down to trigger loading again
                         document.querySelector("ytd-notification-renderer:first-of-type").scrollIntoView();
@@ -178,7 +178,7 @@ function scrollNotifications(scrolltimes = 3, interval = 490) {
                     prev_lastNode = lastNode;
                 }
                 lastNode.scrollIntoView();
-                scrollcount++;
+                scrollcount++;  //cosmetic
             } catch (error) {
                 console.log("🚀 YTBN ~ scrolling error:", error);
             }
@@ -195,6 +195,7 @@ function scrollNotifications(scrolltimes = 3, interval = 490) {
             }
             // loadedNotifs.slice(0, finalAmount); //requires [...blabla]
             let count = 0;
+            toBeFixed = 0;
             for (let index = 0; index < finalAmount; index++) {
                 const element = loadedNotifs[index];
                 if (element.querySelector("img[src]")) {
@@ -202,6 +203,7 @@ function scrollNotifications(scrolltimes = 3, interval = 490) {
                 } else {
                     // console.log("🚀 YTBN ~ attempting to fix:", element.innerText, index);
                     element.scrollIntoView();
+                    toBeFixed++;
                 }
             }
             fixCount++;
@@ -216,6 +218,7 @@ function scrollNotifications(scrolltimes = 3, interval = 490) {
                 continuing(count);
             }
         }
+        console.log("🚀 YTBN ~ scrollInterval ~ notificationcount:", notificationcount, "nullcount:", nullcount, "toBeFixed:", toBeFixed);
     }, interval);
 }
 
@@ -602,6 +605,7 @@ async function saveNotifications(nC) {
     maxPages = Math.ceil(itemcount / itemsperPage);
 
     console.log("🚀 YTBN ~ " + newCount + " new notifications were saved into the db.");
+    console.timeEnd("YTBN");
 
     //send all emails
     if (emailDictArray.length > 0) {
@@ -1252,8 +1256,8 @@ function addStyles() {
     newstyle.id = "smallernotpanel";
     newstyle.innerHTML = `
     ytd-notification-renderer {
-        height: 10px;
-        padding: 4px 4px;
+        height: 4px;
+        padding: 3px 6px;
     }
     
     /*hide notifications panel*/
