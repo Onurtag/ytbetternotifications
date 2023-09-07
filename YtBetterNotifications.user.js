@@ -88,6 +88,12 @@ class SilentAudio {
 let silentAudio = new SilentAudio();
 silentAudio.play();
 
+/* Restore fetch for our context (because the website hijacks it) */
+const ifr = document.createElement('iframe');
+ifr.style.display = 'none';
+document.body.appendChild(ifr);
+const fetch = ifr.contentWindow.fetch;    //only for our context (not window.fetch)
+
 function startup() {
     let startInterval = setInterval(async () => {
         //wait for the notification button to appear (first load)
@@ -512,7 +518,6 @@ async function saveNotifications(nC) {
         //if the notification thumbnail images aren't there, skip.
         let userImg = element.querySelectorAll("img")[0]?.src || "";
         // if (!userImg) {
-        //     debugger;
         //     return "userimagedidnotload";
         // }
 
@@ -562,7 +567,7 @@ async function saveNotifications(nC) {
         console.log("🚀 YTBN ~ saveNotifications -> currDict", currDict);
 
         //detect livestreams
-        if (currDict.title.indexOf(" is live: ") != -1) {
+        if (currDict.title.includes(" is live: ")) {
             currDict.live = true;
             //set livestreams as read automatically
             currDict.read = true;
@@ -778,7 +783,7 @@ function reversefromNow(input) {
     //detect if past or future
     let pastfuture;
     for (const [key, value] of Object.entries(pastfutureObject)) {
-        if (input.indexOf(value.replace("%s", "")) != -1) {
+        if (input.includes(value.replace("%s", ""))) {
             pastfuture = key;
         }
     }
@@ -786,7 +791,7 @@ function reversefromNow(input) {
     //detect the time unit
     let unitkey;
     for (const [key, value] of Object.entries(relativeLocale)) {
-        if (input.indexOf(value.replace("%d", "")) != -1) {
+        if (input.includes(value.replace("%d", ""))) {
             unitkey = key.charAt(0);
         }
     }
@@ -1374,7 +1379,7 @@ async function sendEmailBatch(videoDictArray) {
 
         //---handle Url types---
 
-        if (videoDictArray[i].url.indexOf("video_ids") != -1) {
+        if (videoDictArray[i].url.includes("video_ids")) {
             //handle https://www.youtube.com/watch_videos?video_ids=SZ_q3EC-YJ4,tSgrOcejiUs,skCiZ9IJmZY&type=0&title=幽閉サテライト&少女フラクタル+公式チャンネル
             let matchedIDs = videoDictArray[i].url.match(/video_ids=(.*?)(&|$)/)[1];
             matchedIDs = matchedIDs.split(",");
@@ -1415,6 +1420,7 @@ async function sendEmailBatch(videoDictArray) {
 
     }
 
+    console.log(`🚀 YTBN ~ Finished sending email batch.`);
     //check for error logs after all emails were attempted to send
     await checkErrorLogs();
 
@@ -1449,7 +1455,7 @@ async function sendEmail(videoDict) {
             //LATER: Could use eval() or parse()
 
             //combined OLD method
-            if (thescript.innerHTML.indexOf('window["ytInitialData"]') != -1) {
+            if (thescript.innerHTML.includes('window["ytInitialData"]')) {
                 // Also thescript.innerHTML.match(/window\[\"ytInitialData\"\] = (.*);\n\s*window\[\"ytInitialPlayerResponse/)[1];
                 ytInitialData_PARSED = JSON.parse(thescript.innerHTML.split("window[\"ytInitialData\"] = ")[1].split("ytInitialPlayerResponse")[0].split(";\n")[0]);
                 // Also ... 
@@ -1457,14 +1463,14 @@ async function sendEmail(videoDict) {
             }
 
             //YTinitialdata NEW method
-            if (thescript.innerHTML.indexOf('var ytInitialData = ') != -1) {
+            if (thescript.innerHTML.includes('var ytInitialData = ')) {
                 // Also thescript.innerHTML.match(/window\[\"ytInitialData\"\] = (.*);\n\s*window\[\"ytInitialPlayerResponse/)[1];
                 ytInitialData_PARSED = JSON.parse(thescript.innerHTML.split("var ytInitialData = ")[1].slice(0, -1));
 
             }
 
             //ytInitialPlayerResponse NEW method
-            if (thescript.innerHTML.indexOf('var ytInitialPlayerResponse = ') != -1) {
+            if (thescript.innerHTML.includes('var ytInitialPlayerResponse = ')) {
                 ytInitialPlayerResponse_PARSED = JSON.parse(thescript.innerHTML.split("var ytInitialPlayerResponse = ")[1].split(";var meta = document.createElement('meta')")[0]);
 
             }
@@ -1552,12 +1558,12 @@ async function sendEmail(videoDict) {
                     channelURL = "https://www.youtube.com/channel/" + ytInitialPlayerResponse_PARSED.videoDetails.channelId;
                 }
             }
-            return;
 
         } catch (error) {
             console.warn("🚀 YTBN ~ channelurl", error);
         }
 
+        return;
     }).catch(function (err) {
         // There was an error
         console.warn('🚀 YTBN ~ Something went wrong while fetching video data.', err);
