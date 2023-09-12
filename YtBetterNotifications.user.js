@@ -1265,14 +1265,14 @@ function addStyles() {
     newstyle.id = "smallernotpanel";
     newstyle.innerHTML = `
     ytd-notification-renderer {
-        height: 4px;
-        padding: 3px 6px;
+        height: 4px !important;
+        padding: 3px 6px !important;
     }
-    
-    /*hide notifications panel*/
-    iron-dropdown {
+
+    /*notifications panel opacity*/
+    tp-yt-iron-dropdown {
         /*z-index: -1 !important;*/
-        opacity: 50%;
+        opacity: 75%;
     }
     `;
     document.head.append(newstyle);
