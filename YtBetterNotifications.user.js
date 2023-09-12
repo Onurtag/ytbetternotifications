@@ -1449,6 +1449,7 @@ async function sendEmail(videoDict) {
     await fetch(videoDict.url).then(function (response) {
         return response.text();
     }).then(function (newhtml) {
+        //LATER these don't have to be inside .then blocks. Just use await.
 
         //expose raw html for debugging purposes
         emailhtml = newhtml;
@@ -1495,9 +1496,9 @@ async function sendEmail(videoDict) {
 
             try {
 
-                let newTitle = ytInitialPlayerResponse_PARSED.videoDetails.title ||
-                    ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[0].videoPrimaryInfoRenderer.title.runs[0].text ||
-                    newhtml.match(/<meta (property|name)="(og|twitter):title" content="(.*?)">/)[3];
+                let newTitle = ytInitialPlayerResponse_PARSED?.videoDetails?.title ||
+                    ytInitialData_PARSED?.contents?.twoColumnWatchNextResults?.results?.results?.contents[0]?.videoPrimaryInfoRenderer?.title?.runs[0]?.text ||
+                    newhtml?.match(/<meta (property|name)="(og|twitter):title" content="(.*?)">/)[3];
                 if (newTitle) {
                     videoDict.title = newTitle;
                 }
@@ -1511,8 +1512,8 @@ async function sendEmail(videoDict) {
         // Handle channelName
         try {
 
-            let newChannelName = ytInitialPlayerResponse_PARSED.videoDetails.author ||
-                ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.ownerChannelName;
+            let newChannelName = ytInitialPlayerResponse_PARSED?.videoDetails?.author ||
+                ytInitialPlayerResponse_PARSED?.microformat?.playerMicroformatRenderer?.ownerChannelName;
             if (newChannelName) {
                 channelName = newChannelName;
             }
@@ -1523,7 +1524,8 @@ async function sendEmail(videoDict) {
         // Handle video length
         try {
 
-            vidLength = ytInitialPlayerResponse_PARSED.videoDetails.lengthSeconds || ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.lengthSeconds;
+            vidLength = ytInitialPlayerResponse_PARSED?.videoDetails?.lengthSeconds ||
+                ytInitialPlayerResponse_PARSED?.microformat?.playerMicroformatRenderer?.lengthSeconds;
             //format vid length from seconds
             vidLength = moment.utc(vidLength * 1000).format('HH:mm:ss').replace(/^(00:)/, "");
 
@@ -1534,7 +1536,8 @@ async function sendEmail(videoDict) {
         //handle userimgurl
         try {
 
-            let newUserImgUrl = ytInitialData_PARSED.contents.twoColumnWatchNextResults.results.results.contents[1].videoSecondaryInfoRenderer.owner.videoOwnerRenderer.thumbnail.thumbnails.slice(-1)[0].url.replace(/=s\d.*/, "=s0") || videoDict.userimgurl;
+            let newUserImgUrl = ytInitialData_PARSED?.contents?.twoColumnWatchNextResults?.results?.results?.contents[1]?.videoSecondaryInfoRenderer?.owner?.videoOwnerRenderer?.thumbnail?.thumbnails?.slice(-1)[0]?.url?.replace(/=s\d.*/, "=s0") ||
+                videoDict?.userimgurl;
             if (newUserImgUrl) {
                 videoDict.userimgurl = newUserImgUrl;
                 //Fix for example: "//yt3.ggpht.com/ytc/AAUvwngNRbQ0wRc8flYiQfOm1FFhLB1aghNa2WJs4uOD=s0"
@@ -1549,7 +1552,8 @@ async function sendEmail(videoDict) {
         //handle videoDict.videoimgurl
         try {
 
-            let newVideoImgUrl = ytInitialPlayerResponse_PARSED.videoDetails.thumbnail.thumbnails.slice(-1)[0].url || ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.thumbnail.thumbnails[0].url || videoDict.videoimgurl;
+            let newVideoImgUrl = ytInitialPlayerResponse_PARSED?.videoDetails?.thumbnail?.thumbnails?.slice(-1)[0]?.url || ytInitialPlayerResponse_PARSED?.microformat?.playerMicroformatRenderer?.thumbnail?.thumbnails[0]?.url ||
+                videoDict?.videoimgurl;
             if (newVideoImgUrl) {
                 videoDict.videoimgurl = newVideoImgUrl;
             }
@@ -1560,10 +1564,10 @@ async function sendEmail(videoDict) {
         // Handle channel url
         try {
 
-            channelURL = ytInitialPlayerResponse_PARSED.microformat.playerMicroformatRenderer.ownerProfileUrl;
+            channelURL = ytInitialPlayerResponse_PARSED?.microformat?.playerMicroformatRenderer?.ownerProfileUrl;
             if (channelURL == null) {
-                if (ytInitialPlayerResponse_PARSED.videoDetails.channelId != null) {
-                    channelURL = "https://www.youtube.com/channel/" + ytInitialPlayerResponse_PARSED.videoDetails.channelId;
+                if (ytInitialPlayerResponse_PARSED?.videoDetails?.channelId != null) {
+                    channelURL = "https://www.youtube.com/channel/" + ytInitialPlayerResponse_PARSED?.videoDetails?.channelId;
                 }
             }
 
