@@ -513,7 +513,10 @@ async function saveNotifications(nC) {
     let promiseResults = await Promise.all(nodeArray.map(async (element) => {
 
         let notVideo = false;
-        let rowUrl = element.firstElementChild?.href;
+        let rowUrl = element.querySelector('[role="link"]')?.href;
+        if (rowUrl.includes("&pp=")) {
+            rowUrl = rowUrl.replace(/&pp=.*/,"")
+        }
 
         //if the notification thumbnail images aren't there, skip.
         let userImg = element.querySelectorAll("img")[0]?.src || "";
@@ -533,13 +536,14 @@ async function saveNotifications(nC) {
             let matchingID = videoImage.match(regexImageURLtoID)[2];
             rowUrl = 'https://www.youtube.com/watch?v=' + matchingID;
         }
+        const strings = element.querySelectorAll("yt-formatted-string");
 
         let currDict = {
             id: uuidv4(),
             hash: "",
             url: rowUrl,
-            title: element.querySelectorAll("yt-formatted-string")[0].innerText,
-            time: reversefromNow(element.querySelectorAll("yt-formatted-string")[2].innerText),
+            title: strings[0]?.innerText,
+            time: reversefromNow(strings[2]?.innerText),
             userimgurl: userImg,
             videoimgurl: videoImage,
             live: false,
@@ -548,7 +552,7 @@ async function saveNotifications(nC) {
         };
 
         //detect duplications
-        //concenate "url + userimgurl + title(comment)" strings and hash the result
+        //concenate "url + userimgurl + title/comment" strings and hash the result. This will be used to prevent saving duplicate notifications.
         //LATER MAYBE: remove userimgurl from the hash (warning!)
         currDict.hash = await digestToSHA256(currDict.url + currDict.userimgurl + currDict.title);
 
@@ -1381,14 +1385,18 @@ async function sendEmailBatch(videoDictArray) {
 
         if (videoDictArray[i].url.includes("video_ids")) {
             //handle https://www.youtube.com/watch_videos?video_ids=SZ_q3EC-YJ4,tSgrOcejiUs,skCiZ9IJmZY&type=0&title=幽閉サテライト&少女フラクタル+公式チャンネル
-            let matchedIDs = videoDictArray[i].url.match(/video_ids=(.*?)(&|$)/)[1];
-            matchedIDs = matchedIDs.split(",");
+            try {
+                let matchedIDs = videoDictArray[i].url.match(/video_ids=(.*?)(&|$)/)[1];
+                matchedIDs = matchedIDs.split(",");
 
-            for (let j = 0; j < matchedIDs.length; j++) {
-                const videoID = matchedIDs[j];
-                let cloneDict = JSON.parse(JSON.stringify(videoDictArray[i]));
-                cloneDict.url = 'https://www.youtube.com/watch?v=' + videoID;
-                emailSendArray.push(cloneDict);
+                for (let j = 0; j < matchedIDs.length; j++) {
+                    const videoID = matchedIDs[j];
+                    let cloneDict = JSON.parse(JSON.stringify(videoDictArray[i]));
+                    cloneDict.url = 'https://www.youtube.com/watch?v=' + videoID;
+                    emailSendArray.push(cloneDict);
+                }
+            } catch (error) {
+                console.error(`🚀 YTBN ~ EmailSendError: The data doesn't include a video url.`, videoDictArray[i]);
             }
 
         } else {
