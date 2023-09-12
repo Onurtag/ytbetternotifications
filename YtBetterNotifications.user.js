@@ -282,7 +282,7 @@ async function exportDB(event) {
             prettyJson: true,
             progressCallback
         });
-        saveAs(blob, "ytbetternotifications-export.json");
+        saveAs(blob, "ytbetternotifications-export-" + Date.now().toString().slice(0, -8) + "00000000" + ".json");
     } catch (error) {
         console.error('🚀 YTBN ~ File export error: ', error);
     }
