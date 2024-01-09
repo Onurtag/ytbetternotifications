@@ -25,6 +25,8 @@ let db,
     GAPIClientKey = null,
     useEmailSecureToken = false,
     useRelativeTime = false,
+    useDailyLargeCheck = false,
+    largeCheck = false,
     maxPages = 99999;
 
 const MAX_LOG_SIZE = 600,
@@ -133,8 +135,25 @@ function startup() {
                 if (document.querySelector('ytd-notification-renderer') != null) {
                     clearInterval(startInterval2);
 
-                    //start scrolling through notifications
-                    scrollNotifications();
+                    //default scroll settings
+                    let scrolls = 1;
+                    let scrollInterval = 155;
+                    largeCheck = false;
+
+                    if (useDailyLargeCheck) {
+                        let storedTime = parseInt(localStorage.getItem("ytbnLastLargeCheck")) || 0;
+                        let nowTime = Date.now();
+                        //86400000 = 1 day
+                        if (!storedTime || nowTime > storedTime + 86000000) {
+                            //daily long scroll settings
+                            scrolls = 2;
+                            scrollInterval = 195;
+                            largeCheck = true;
+                        }
+                    }
+
+                    scrollNotifications(scrolls, scrollInterval);
+
 
                 }
             }
@@ -146,7 +165,7 @@ function startup() {
     }, 100);
 }
 
-function scrollNotifications(scrolltimes = 2, interval = 195) {
+function scrollNotifications(scrolltimes = 1, interval = 155) {
 
     cleanLogsOverQuota();
 
@@ -256,6 +275,9 @@ function continuing(nC) {
         //pause silent audio
         silentAudio.pause();
 
+        if (largeCheck) {
+            localStorage.setItem("ytbnLastLargeCheck", Date.now());
+        }
     });
 
 }
@@ -1764,6 +1786,7 @@ async function readSettings() {
                 }
 
                 useRelativeTime = options[0].value.UseRelativeTime;
+                useDailyLargeCheck = options[0].value?.UseDailyLargeCheck || false;
                 return;
             });
 
@@ -1830,12 +1853,14 @@ async function errorButtonClick() {
 
 function saveOptions() {
 
-    relativeTimeCheckbox = document.querySelector("#optionRelativeTimeCheckbox").checked;
+    useRelativeTime = document.querySelector("#optionRelativeTimeCheckbox").checked;
+    useDailyLargeCheck = document.querySelector("#optionDailyLargeCheckbox").checked;
 
     let settingsDict = {
         key: "options",
         value: {
-            UseRelativeTime: relativeTimeCheckbox,
+            UseRelativeTime: useRelativeTime,
+            UseDailyLargeCheck: useDailyLargeCheck,
         },
         extra: "",
     };
@@ -2162,6 +2187,7 @@ function displayTabbedOptions() {
         <div class="tabbed-section-1 visible">
             <tp-yt-paper-button id="loadallButton" raised class="" style="margin-top: auto">LOAD ALL NOTIFICATIONS</tp-yt-paper-button>
             <tp-yt-paper-checkbox id="optionRelativeTimeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin: 50px auto 5px auto">Display relative time</tp-yt-paper-checkbox>
+            <tp-yt-paper-checkbox id="optionDailyLargeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin: 50px auto 5px auto">Daily large checks</tp-yt-paper-checkbox>
             <tp-yt-paper-button id="saveButtonOptions" raised class="" style="margin-top: auto; margin-bottom: 0px">SAVE</tp-yt-paper-button>
             <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top: 14px; margin-bottom: 0px">CLOSE</tp-yt-paper-button>
         </div>
@@ -2361,7 +2387,9 @@ function displayTabbedOptions() {
                 }
 
                 useRelativeTime = options[0].value.UseRelativeTime;
+                useDailyLargeCheck = options[0].value?.UseDailyLargeCheck || false;
                 document.querySelector("#optionRelativeTimeCheckbox").checked = useRelativeTime;
+                document.querySelector("#optionDailyLargeCheckbox").checked = useDailyLargeCheck;
                 return;
             });
 
