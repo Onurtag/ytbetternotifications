@@ -670,11 +670,12 @@ async function loadNotifications(page = 0) {
                 .reverse();
         } else {
             //YES Filter
+            const filterregex = new RegExp(filterString, 'i');
             filteredCollection = await db.notifications
                 .orderBy('time')
                 .reverse()
                 .filter((notification) => {
-                    return notification.title.includes(filterString);
+                    return filterregex.test(notification.title);
                 });
         }
 
@@ -686,7 +687,11 @@ async function loadNotifications(page = 0) {
         maxPages = Math.ceil(itemcount / itemsperPage);
 
         if (itemcount == 0) {
+            document.querySelector("#outerNotifications #innerNotifications").classList.add("empty");
+            //stop here
             return itemcount;
+        } else {
+            document.querySelector("#outerNotifications #innerNotifications").classList.remove("empty");
         }
 
         //Get current page
@@ -954,6 +959,15 @@ function addStyles() {
         margin-bottom: 1em;
     }
 
+    /* Message for when there are no notifications */
+    #innerNotifications.empty:empty:before {
+        content: "No notifications were found.\\a Suggestion: Clear the filter.";
+        font-size: 18pt;
+        text-align: center;
+        white-space: pre-line;
+        margin-block: auto;
+    }
+    
     #innerNotifications {
         display: flex;
         flex-direction: column;
