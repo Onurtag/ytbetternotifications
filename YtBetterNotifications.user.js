@@ -27,6 +27,7 @@ let db,
     useRelativeTime = false,
     useDailyLargeCheck = false,
     largeCheck = false,
+    filterString = "",
     maxPages = 99999;
 
 const MAX_LOG_SIZE = 600,
@@ -129,7 +130,7 @@ function startup() {
         let waiting = 0;
         let startInterval2 = setInterval(() => {
             //Wait for the GAPI if we are using it.
-            if (GAPIClientID == null || emailGAPIReady == true || waiting > 10000) {
+            if (GAPIClientID == null || emailGAPIReady == true || waiting > 5000) {
 
                 //Wait for any notification element to appear
                 if (document.querySelector('ytd-notification-renderer') != null) {
@@ -247,6 +248,7 @@ function scrollNotifications(scrolltimes = 1, interval = 155) {
     }, interval);
 }
 
+//LATER convert to async
 function continuing(nC) {
 
     //Async update the notifications database
@@ -383,6 +385,20 @@ async function setupDB() {
     });
 
     //db.delete();
+}
+
+function filterPage() {
+    //set filter string, should be blank "" by default
+    filterString = document.querySelector("#sidebuttonsTop #sidebarFilterInput").value;
+    // Reload notifications
+    cleanTable();
+    loadNotifications(0).then(function (result) {
+        console.log("🚀 ~ filterPage result:", result);
+        if (result != 0) {
+            setupPaginationButtons();
+        }
+        return result;
+    });
 }
 
 function previousPage(event) {
@@ -537,7 +553,7 @@ async function saveNotifications(nC) {
         let notVideo = false;
         let rowUrl = element.querySelector('[role="link"]')?.href;
         if (rowUrl.includes("&pp=")) {
-            rowUrl = rowUrl.replace(/&pp=.*/,"")
+            rowUrl = rowUrl.replace(/&pp=.*/, "")
         }
 
         //if the notification thumbnail images aren't there, skip.
@@ -645,13 +661,52 @@ async function saveNotifications(nC) {
 }
 
 async function loadNotifications(page = 0) {
-    const notificationsArray = await db.notifications.orderBy('time').reverse().offset(page * itemsperPage).limit(itemsperPage).toArray().then(function (result) {
-        return result;
-    });
+    try {
+        let filteredCollection = null;
+        if (filterString == "") {
+            //NO Filter (everything)
+            filteredCollection = await db.notifications
+                .orderBy('time')
+                .reverse();
+        } else {
+            //YES Filter
+            filteredCollection = await db.notifications
+                .orderBy('time')
+                .reverse()
+                .filter((notification) => {
+                    return notification.title.includes(filterString);
+                });
+        }
 
-    notificationsArray.forEach(dict => {
-        displayNotification(dict);
-    });
+        //Set max pages
+        const itemcount = await filteredCollection
+            .count().then(function (count) {
+                return count;
+            });
+        maxPages = Math.ceil(itemcount / itemsperPage);
+
+        if (itemcount == 0) {
+            return itemcount;
+        }
+
+        //Get current page
+        let notificationsArray = await filteredCollection
+            .offset(page * itemsperPage)
+            .limit(itemsperPage)
+            .toArray()
+            .then(function (result) {
+                return result;
+            });
+
+        notificationsArray.forEach(dict => {
+            displayNotification(dict);
+        });
+
+        // console.log("🚀 ~ loadNotifications ~ itemcount:", itemcount);
+        return itemcount;
+    } catch (error) {
+        console.error("🚀 YTBN ~ loadNotifications ~ error:", error);
+    }
 }
 
 function displayNotification(currDict) {
@@ -1011,34 +1066,13 @@ function addStyles() {
         color: rgba(0, 0, 0, 0);
     }
 
-    #sidebuttonsTop #searchContainer {
+    #sidebuttonsTop #filterContainer {
         display: flex;
         flex-direction: row;
-    }
-
-    #sidebarSearchInput {
-        width: 89px;
-        padding-right: 22px;
-        height: 22px;
-        margin: 6px -16px 22px 12px;
-        background-color: #0F0F0F;
-        border: 1px solid #303030;
-        color: rgba(255, 255, 255, 0.88);
-        padding-left: 4px;
-        border-radius: 2px;
-    }
-
-    #sidebarSearchInput:focus {
-        border: 1px solid #1C62B9;
-    }
-
-    #sidebarSearchButton {
-        padding: 0px;
-        top: 8px;
-        left: -7px;
-        height: 43%;
-        width: 16%;
-        color: rgba(255, 255, 255, 0.45);
+        border: 2px #3EA6FF44 solid;
+        border-radius: 8px;
+        margin: 0px 8px 12px 8px;
+        padding: 0px 10px;
     }
 
     /* status (default is error) */
@@ -1842,8 +1876,9 @@ async function errorButtonClick() {
             emailArray.push(notifData);
             console.log("🚀 YTBN ~ errorButtonClick ~ notifData", notifData);
         });
-
-        //send all emails
+        // //only keep the first 24 emails in emailArray (for manual batching to avoid being detected as an email spammer)
+        // emailArray = emailArray.slice(0, 24);
+        //send all emails in emailArray
         if (emailArray.length > 0) {
             sendEmailBatch(emailArray);
         }
@@ -2019,54 +2054,47 @@ function setupNotificationDiv() {
     outerNotificationsDiv.id = "outerNotifications";
     innerNotificationsDiv.id = "innerNotifications";
 
-    const divHTML = `
-    <div id="sidebuttons">
+    const divHTML = `<div id="sidebuttons">
         <div id="sidebuttonsTop">
-            <!-- TODO add search functionality later (maybe), could add a "download additional data" button with it (channel names mostly (but we can get the channel names from TITLE???))
-            <div id="searchContainer">                
-                <input label="Filter" id="sidebarSearchInput" placeholder="Filter">
-                    <paper-icon-button slot="suffix" id="sidebarSearchButton" icon="search" alt="Filter" title="Filter">
-                    </paper-icon-button>
-                </input>
+            <div id="filterContainer">
+                <div style="position: absolute; margin: -11px 0px 0px 14px; font-size: 10pt; background: #151515; padding: 1px">Filter</div>
+                <tp-yt-paper-input id="sidebarFilterInput" no-label-float placeholder="No Filter" style="font-size: 14px;"></tp-yt-paper-input>
             </div>
-            -->
-            <div id="livesideButtons" style="border: 2px #3EA6FF44 solid;border-radius: 8px;margin: 0px 8px 6px 8px;">
-                <div style="position: absolute;margin: -12px 0px 0px 24px;font-size: 10pt;background: #151515;padding: 1px;">Livestreams</div>
-                <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px);" id="hideliveCheckbox" noink>Hide</tp-yt-paper-checkbox>
+            <div id="livesideButtons" style="border: 2px #3ea6ff44 solid; border-radius: 8px; margin: 0px 8px 6px 8px">
+                <div style="position: absolute; margin: -12px 0px 0px 24px; font-size: 10pt; background: #151515; padding: 1px">Livestreams</div>
+                <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px)" id="hideliveCheckbox" noink>Hide</tp-yt-paper-checkbox>
                 <tp-yt-paper-checkbox style="" id="livetransparencyCheckbox" noink checked>Opacity</tp-yt-paper-checkbox>
             </div>
-            <div id="readsideButtons" style="border: 2px #3EA6FF44 solid;border-radius: 8px;margin: 8px 8px 6px 8px;">
-                <div style="position: absolute;margin: -12px 0px 0px 24px;font-size: 10pt;background: #151515;padding: 1px;">Read</div>
-                <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px);" id="hidereadCheckbox" noink>Hide</tp-yt-paper-checkbox>
+            <div id="readsideButtons" style="border: 2px #3ea6ff44 solid; border-radius: 8px; margin: 8px 8px 6px 8px">
+                <div style="position: absolute; margin: -12px 0px 0px 24px; font-size: 10pt; background: #151515; padding: 1px">Read</div>
+                <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px)" id="hidereadCheckbox" noink>Hide</tp-yt-paper-checkbox>
                 <tp-yt-paper-checkbox style="" id="readtransparencyCheckbox" noink checked>Opacity</tp-yt-paper-checkbox>
             </div>
-            <div id="commentsideButtons" style="border: 2px #3EA6FF44 solid;border-radius: 8px;margin: 8px 8px 6px 8px;">
-                <div style="position: absolute;margin: -12px 0px 0px 24px;font-size: 10pt;background: #151515;padding: 1px;">Comments</div>
-                <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px);" id="hiderepliesCheckbox" noink">Hide</tp-yt-paper-checkbox>
+            <div id="commentsideButtons" style="border: 2px #3ea6ff44 solid; border-radius: 8px; margin: 8px 8px 6px 8px">
+                <div style="position: absolute; margin: -12px 0px 0px 24px; font-size: 10pt; background: #151515; padding: 1px">Comments</div>
+                <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px)" id="hiderepliesCheckbox" noink>Hide</tp-yt-paper-checkbox>
                 <tp-yt-paper-checkbox style="" id="commenttransparencyCheckbox" noink checked>Opacity</tp-yt-paper-checkbox>
             </div>
-            
         </div>
         <div id="sidebuttonsBottom">
             <div id="ytb-status" class="ytb-status-hidden ytb-status"></div>
-            <tp-yt-paper-button id="displayErrorListButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 0em 12px;">ERRORS: NONE</tp-yt-paper-button>
-            <tp-yt-paper-button id="displayOptionsButton" raised class="" style="border: 1px #82c7f299 solid;font-size: .8em;text-align: center;margin: 12px 12px 1em 12px;">SETTINGS</tp-yt-paper-button>
-            <tp-yt-paper-checkbox style="margin-top: 2em; margin-left: 24px;" id="readallCheckbox" noink>Toggle All Read/Unread</tp-yt-paper-checkbox>
+            <tp-yt-paper-button id="displayErrorListButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 0em 12px">ERRORS: NONE</tp-yt-paper-button>
+            <tp-yt-paper-button id="displayOptionsButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 1em 12px">SETTINGS</tp-yt-paper-button>
+            <tp-yt-paper-checkbox style="margin-top: 2em; margin-left: 24px" id="readallCheckbox" noink>Toggle All<br />Read/Unread</tp-yt-paper-checkbox>
         </div>
     </div>
-    <div id="loadindicator" style="top: 43%;left: 46%;position: absolute;">
-        <tp-yt-paper-spinner active style="width: 70px;height: 70px;"></tp-yt-paper-spinner>
-        <div style="font-size:2em;text-align: center;margin-left: -60%;margin-top: 6px;">
+    <div id="loadindicator" style="top: 43%; left: 46%; position: absolute">
+        <tp-yt-paper-spinner active style="width: 70px; height: 70px"></tp-yt-paper-spinner>
+        <div style="font-size: 2em; text-align: center; margin-left: -60%; margin-top: 6px">
             Loading...
-            <br>
+            <br />
             Do not click anywhere...
-            <br>
+            <br />
             Do not do anything...
         </div>
     </div>
-    <div id="innerNotifications">
-    </div>
-    `;
+    <div id="innerNotifications"></div>`;
+
     document.querySelector("body").append(outerNotificationsDiv);
     outerNotificationsDiv.innerHTML = divHTML;
     document.querySelector("#sidebuttons #readallCheckbox").addEventListener('click', togglereadAll);
@@ -2078,9 +2106,7 @@ function setupNotificationDiv() {
     document.querySelector("#sidebuttons #commenttransparencyCheckbox").addEventListener('click', commenttransparency);
     document.querySelector("#sidebuttons #displayOptionsButton").addEventListener('click', displayTabbedOptions);
     document.querySelector("#sidebuttons #displayErrorListButton").addEventListener('click', errorButtonClick);
-    //LATER fix search 2
-    // document.querySelector("#sidebuttons #sidebarSearchButton").addEventListener('click', sidebarSearch);
-    // document.querySelector("#sidebuttons #sidebarSearchInput").addEventListener('keyup', sidebarInputkey);
+    document.querySelector("#sidebuttons #sidebarFilterInput").addEventListener('keyup', sidebarFilterKeyup);
     return "pagination";
 }
 
@@ -2105,10 +2131,9 @@ function sidebarSearch(event) {
 
 }
 
-function sidebarInputkey(event) {
-    if (event.keyCode === 13) {
-        event.preventDefault();
-        document.querySelector("#sidebuttons #sidebarSearchButton").click();
+function sidebarFilterKeyup(event) {
+    if (event.key === "Enter") {
+        filterPage();
     }
 }
 
