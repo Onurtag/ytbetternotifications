@@ -1087,6 +1087,17 @@ function addStyles() {
         border-radius: 8px;
         margin: 0px 8px 12px 8px;
         padding: 0px 10px;
+        transition: all 200ms;
+        width: 100px;
+      }
+
+    /* Enlarge and glow when focused inside (for ease of use) */
+    #sidebuttonsTop #filterContainer:focus-within {
+        width: 500px;
+        background: #151515;
+        border: 2px #0089FF solid;
+        box-shadow: 0px 0px 8px #59B2FFB2;
+        z-index: 1;
     }
 
     /* status (default is error) */
@@ -2072,7 +2083,7 @@ function setupNotificationDiv() {
         <div id="sidebuttonsTop">
             <div id="filterContainer">
                 <div style="position: absolute; margin: -11px 0px 0px 14px; font-size: 10pt; background: #151515; padding: 1px">Filter</div>
-                <tp-yt-paper-input id="sidebarFilterInput" no-label-float placeholder="No Filter" style="font-size: 14px;"></tp-yt-paper-input>
+                <tp-yt-paper-input id="sidebarFilterInput" no-label-float placeholder="No Filter" style="width: 100%;"></tp-yt-paper-input>
             </div>
             <div id="livesideButtons" style="border: 2px #3ea6ff44 solid; border-radius: 8px; margin: 0px 8px 6px 8px">
                 <div style="position: absolute; margin: -12px 0px 0px 24px; font-size: 10pt; background: #151515; padding: 1px">Livestreams</div>
@@ -2121,6 +2132,7 @@ function setupNotificationDiv() {
     document.querySelector("#sidebuttons #displayOptionsButton").addEventListener('click', displayTabbedOptions);
     document.querySelector("#sidebuttons #displayErrorListButton").addEventListener('click', errorButtonClick);
     document.querySelector("#sidebuttons #sidebarFilterInput").addEventListener('keyup', sidebarFilterKeyup);
+    document.querySelector("#sidebuttons #sidebarFilterInput input").addEventListener('blur', sidebarFilterBlur);
     return "pagination";
 }
 
@@ -2139,14 +2151,16 @@ function useTokenCheckboxClicked(event) {
 
 }
 
-function sidebarSearch(event) {
-    console.log(event);
-    console.log(event.target);
-
-}
-
 function sidebarFilterKeyup(event) {
     if (event.key === "Enter") {
+        filterPage();
+    }
+}
+
+//Only apply filter if it hasn't been applied yet
+function sidebarFilterBlur(event) {
+    let inputfs = document.querySelector("#sidebuttonsTop #sidebarFilterInput").value;
+    if (filterString != inputfs) {
         filterPage();
     }
 }
