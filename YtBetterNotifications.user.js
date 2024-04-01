@@ -846,8 +846,10 @@ async function checkboxReadClicked(event) {
     }).then(result => {
         if (readvalue) {
             eventRow.classList.add("notificationRead");
+            console.log(`🚀 YTBN ~ Notification set as Read: ${eventRow?.querySelector(".notcol2")?.textContent}`, rowId);
         } else {
             eventRow.classList.remove("notificationRead");
+            console.log(`🚀 YTBN ~ Notification set as Unread: ${eventRow?.querySelector(".notcol2")?.textContent}`, rowId);
         }
         return result;
     }).catch(Dexie.ModifyError, function (e) {
