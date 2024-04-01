@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.23
+// @version         1.1.24
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -46,6 +46,7 @@ const regexImageURLtoID = /https?:\/\/i.ytimg.com\/(vi|vi_webp)\/(.*?)\/.*?.(jpg
 
 /*
 TODO: Increment Version Number
+TODO: (optionally) Get more data while saving notifications (instead of doing it before sending emails.) Needs to be batched to prevent throttling.
 
 LATER: Link channel image to channel if I have the data
 LATER: Add a filter/search box/tab/etc
