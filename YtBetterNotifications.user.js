@@ -930,7 +930,7 @@ function addStyles() {
         /*transform: translate(-50%, -50%);*/
         transform: translateX(calc(-50% - 0.5px)) translateY(calc(-50% - 0.5px));
         color: #ddd;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25), 0 2px 4px rgba(0, 0, 0, 0.35);
+        box-shadow: 0 4px 4px rgba(0, 0, 0, 0.4), 0 -2px 4px rgba(0, 0, 0, 0.4), -2px 0 4px rgba(0, 0, 0, 0.4), 4px 0 4px rgba(0, 0, 0, 0.4);
     }
 
     #sidebuttons {
@@ -944,7 +944,7 @@ function addStyles() {
         background-color: #151515;
         height: calc(100% - 16px);
         border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.16), 0 2px 4px rgba(0, 0, 0, 0.23);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), 0 1px 4px rgba(0, 0, 0, 0.3);
         user-select: none;
     }
 
@@ -959,6 +959,24 @@ function addStyles() {
         flex-direction: column;
         margin-top: auto;
         margin-bottom: 1em;
+    }
+
+    #filterClearButton:hover {
+        background: #47474787;
+        filter: brightness(120%);
+    }
+
+    #filterClearButton {
+        border: 1px solid transparent;
+        border-radius: 50%;
+        font-size: 10pt;
+        position: relative;
+        width: 26px;
+        height: 22px;
+        margin: auto -7px auto auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
     }
 
     /* Message for when there are no notifications */
@@ -2086,6 +2104,7 @@ function setupNotificationDiv() {
             <div id="filterContainer">
                 <div style="position: absolute; margin: -11px 0px 0px 14px; font-size: 10pt; background: #151515; padding: 1px">Filter</div>
                 <tp-yt-paper-input id="sidebarFilterInput" no-label-float placeholder="No Filter" style="width: 100%;"></tp-yt-paper-input>
+                <div id="filterClearButton" title="Clear" style="display: none;">✖</div>
             </div>
             <div id="livesideButtons" style="border: 2px #3ea6ff44 solid; border-radius: 8px; margin: 0px 8px 6px 8px">
                 <div style="position: absolute; margin: -12px 0px 0px 24px; font-size: 10pt; background: #151515; padding: 1px">Livestreams</div>
@@ -2134,7 +2153,9 @@ function setupNotificationDiv() {
     document.querySelector("#sidebuttons #displayOptionsButton").addEventListener('click', displayTabbedOptions);
     document.querySelector("#sidebuttons #displayErrorListButton").addEventListener('click', errorButtonClick);
     document.querySelector("#sidebuttons #sidebarFilterInput").addEventListener('keyup', sidebarFilterKeyup);
+    document.querySelector("#sidebuttons #sidebarFilterInput").addEventListener('input', sidebarFilterInput);
     document.querySelector("#sidebuttons #sidebarFilterInput input").addEventListener('blur', sidebarFilterBlur);
+    document.querySelector("#sidebuttons #filterClearButton").addEventListener('mousedown', filterClearMousedown);
     return "pagination";
 }
 
@@ -2159,12 +2180,32 @@ function sidebarFilterKeyup(event) {
     }
 }
 
-//Only apply filter if it hasn't been applied yet
-function sidebarFilterBlur(event) {
-    let inputfs = document.querySelector("#sidebuttonsTop #sidebarFilterInput").value;
-    if (filterString != inputfs) {
+function sidebarFilterInput(event) {
+    const clearButton = document.querySelector("#sidebuttonsTop #filterClearButton");
+    if (event.target.value == "") {
+        clearButton.style.display = "none";
+    } else {
+        clearButton.style.display = "flex";
+    }
+}
+
+function filterClearMousedown(event) {
+    document.querySelector('#sidebuttonsTop #sidebarFilterInput').value = "";
+    event.target.style.display = "none";
+    if (filterString != "") {
         filterPage();
     }
+}
+
+//Only apply filter if it hasn't been applied yet
+function sidebarFilterBlur(event) {
+    //Allow clicking the clear button using a delay
+    setTimeout(() => {
+        let inputfs = document.querySelector("#sidebuttonsTop #sidebarFilterInput").value;
+        if (filterString != inputfs) {
+            filterPage();
+        }
+    }, 200);
 }
 
 async function setupPaginationButtons() {
