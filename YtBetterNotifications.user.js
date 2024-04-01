@@ -130,7 +130,7 @@ function startup() {
         let waiting = 0;
         let startInterval2 = setInterval(() => {
             //Wait for the GAPI if we are using it.
-            if (GAPIClientID == null || emailGAPIReady == true || waiting > 5000) {
+            if (shouldSendEmail == false || GAPIClientID == null || emailGAPIReady == true || waiting > 5000) {
 
                 //Wait for any notification element to appear
                 if (document.querySelector('ytd-notification-renderer') != null) {
