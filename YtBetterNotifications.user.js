@@ -1087,9 +1087,22 @@ function addStyles() {
         margin-bottom: 0.5em;
     }
 
+    #outerNotifications tp-yt-paper-checkbox:not([checked]) #checkbox {
+        border-color: #ccc;
+    }
+
+    #outerNotifications tp-yt-paper-checkbox[checked]:hover #checkbox {
+        opacity: 0.8;
+    }
+
+    #outerNotifications tp-yt-paper-checkbox:not([checked]):hover #checkbox {
+        border-color: #4190d7 !important;
+    }
+
     #outerNotifications tp-yt-paper-checkbox {
         font-size: .85em;
         margin-left: 14px;
+        width: fit-content;
     }
 
     #outerNotifications tp-yt-paper-checkbox #checkboxLabel {
