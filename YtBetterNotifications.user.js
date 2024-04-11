@@ -49,12 +49,11 @@ TODO: Increment Version Number
 TODO: (optionally) Get more data while saving notifications (instead of doing it before sending emails.) Needs to be batched to prevent throttling.
 
 LATER: Link channel image to channel if I have the data
-LATER: Add a filter/search box/tab/etc
-LATER: Add a blocking fullscreen div to protect the native notifications popup window while its loading pages.
 LATER: Add a "Saved!" popup when you click save
-LATER: switch moment.js with a better library
+LATER: switch moment.js with a better library (or native)
 LATER: Constrict selector queries (use node.querySelector instead of document.querySelector etc...)
 LATER MAYBE: Email error log window with a table
+LATER MAYBE: Switch to a build setup (separate js, css, html files) BUT; for now I don't need it as I use Template Literal Editor.
 
 --other info--
 1. alternative youtube library: https://github.com/LuanRT/YouTube.js 
@@ -845,14 +844,15 @@ async function checkboxReadClicked(event) {
     return await db.notifications.where("id").equals(rowId).modify({
         "read": readvalue
     }).then(result => {
-        const notifTitle = eventRow?.querySelector(".notcol2")?.textContent;
+        const notifCol2 = eventRow.querySelector(".notcol2");
+        const notifTitle = notifCol2?.textContent;
+        const notifVidURL = notifCol2?.firstElementChild?.href;
         if (readvalue) {
             eventRow.classList.add("notificationRead");
-            console.log(`🚀 YTBN ~ Notification set as Read:`, {notifTitle}, {rowId});
         } else {
             eventRow.classList.remove("notificationRead");
-            console.log(`🚀 YTBN ~ Notification set as Unread:`, {notifTitle}, {rowId});
         }
+        console.log(`🚀 YTBN ~ Notification set as ${readvalue ? "Read" : "Unread"}:`, {notifTitle}, {notifVidURL}, {rowId});
         return result;
     }).catch(Dexie.ModifyError, function (e) {
         console.error("🚀 YTBN ~ failed to modify read value", e.failures.length);
@@ -924,7 +924,7 @@ function addStyles() {
         display: block;
         position: fixed;
         width: 75%;
-        height: 75%;
+        height: 82%;
         border-radius: 15px;
         z-index: 2201;
         top: 50%;
@@ -989,7 +989,7 @@ function addStyles() {
         white-space: pre-line;
         margin-block: auto;
     }
-    
+
     #innerNotifications {
         display: flex;
         flex-direction: column;
@@ -1011,7 +1011,7 @@ function addStyles() {
 
     .notificationsRow {
         margin-left: 0%;
-        margin-right: 5%;
+        margin-right: 2%;
         margin-bottom: 4px;
         display: flex;
         flex-direction: row;
@@ -1024,8 +1024,8 @@ function addStyles() {
     /* same as .notificationsRow */
 
     #pagingButtons {
-        margin-left: 0%;
-        margin-right: 5%;
+        margin-left: 3%;
+        margin-right: 4%;
         margin-bottom: 4px;
         display: flex;
         flex-direction: row;
@@ -1071,7 +1071,7 @@ function addStyles() {
     }
 
     .notcol5 {
-        flex-grow: 0.7;
+        flex-grow: 0.5;
         margin-right: 0px;
     }
 
@@ -1096,13 +1096,25 @@ function addStyles() {
     }
 
     #outerNotifications tp-yt-paper-checkbox:not([checked]):hover #checkbox {
-        border-color: #4190d7 !important;
+        border-color: #72a6d7 !important;
     }
 
     #outerNotifications tp-yt-paper-checkbox {
         font-size: .85em;
         margin-left: 14px;
         width: fit-content;
+    }
+
+    #outerNotifications .notificationsRow tp-yt-paper-checkbox {
+        margin: 0px;
+        padding: 10px;
+        background: #222;
+        border-radius: 8px;
+    }
+
+    #outerNotifications .notificationsRow tp-yt-paper-checkbox:hover {
+        background: #2b2b2b;
+        filter: contrast(90%);
     }
 
     #outerNotifications tp-yt-paper-checkbox #checkboxLabel {
@@ -1124,7 +1136,7 @@ function addStyles() {
         padding: 0px 10px;
         transition: all 200ms;
         width: 100px;
-      }
+    }
 
     /* Enlarge and glow when focused inside (for ease of use) */
     #sidebuttonsTop #filterContainer:focus-within {
@@ -2152,7 +2164,7 @@ function setupNotificationDiv() {
             <br />
             Do not click anywhere...
             <br />
-            Do not do anything...
+            Do not press anything...
         </div>
     </div>
     <div id="innerNotifications"></div>`;
