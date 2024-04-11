@@ -2145,6 +2145,7 @@ function setupNotificationDiv() {
         </div>
     </div>
     <div id="loadindicator" style="top: 43%; left: 46%; position: absolute">
+        <div id="ytbnBlockingDiv" draggable="false" style="position: fixed; top: -50vh; left: -50vw; width: 200vw; height: 200vh; z-index: 99999999; background-color: rgba(0, 0, 0, 0.3);"></div>
         <tp-yt-paper-spinner active style="width: 70px; height: 70px"></tp-yt-paper-spinner>
         <div style="font-size: 2em; text-align: center; margin-left: -60%; margin-top: 6px">
             Loading...
