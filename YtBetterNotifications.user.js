@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.25
+// @version         1.1.26
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
