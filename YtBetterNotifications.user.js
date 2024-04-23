@@ -38,7 +38,7 @@ console.time("YTBN");
 console.log("🚀 YTBN ~ ", {ytbnDebugEmail});
 
 let dontSendEmailsOver = 150;
-let itemsperPage = 50;
+let itemsPerPage = 50;
 let liveTitlePrependString = "🔴 ";
 
 const regexVideoURLtoID = /(.*?(watch.v=|watch_videos.video_ids=)(.*?)($|,.*$))/;
@@ -649,7 +649,7 @@ async function saveNotifications(nC) {
         .count().then(function (count) {
             return count;
         });
-    maxPages = Math.ceil(itemcount / itemsperPage);
+    maxPages = Math.ceil(itemcount / itemsPerPage);
 
     console.log("🚀 YTBN ~ " + newCount + " new notifications were saved into the db.");
     console.timeEnd("YTBN");
@@ -684,7 +684,7 @@ async function loadNotifications(page = 0) {
             .count().then(function (count) {
                 return count;
             });
-        maxPages = Math.ceil(itemcount / itemsperPage);
+        maxPages = Math.ceil(itemcount / itemsPerPage);
 
         if (itemcount == 0) {
             document.querySelector("#outerNotifications #innerNotifications").classList.add("empty");
@@ -696,8 +696,8 @@ async function loadNotifications(page = 0) {
 
         //Get current page
         let notificationsArray = await filteredCollection
-            .offset(page * itemsperPage)
-            .limit(itemsperPage)
+            .offset(page * itemsPerPage)
+            .limit(itemsPerPage)
             .toArray()
             .then(function (result) {
                 return result;
@@ -1893,6 +1893,7 @@ async function readSettings() {
 
                 useRelativeTime = options[0].value.UseRelativeTime;
                 useDailyLargeCheck = options[0].value?.UseDailyLargeCheck || false;
+                itemsPerPage = options[0].value.itemsPerPage || itemsPerPage;
                 return;
             });
 
@@ -1962,12 +1963,14 @@ function saveOptions() {
 
     useRelativeTime = document.querySelector("#optionRelativeTimeCheckbox").checked;
     useDailyLargeCheck = document.querySelector("#optionDailyLargeCheckbox").checked;
+    itemsPerPage = document.querySelector("#optionItemsPerPage").value;
 
     let settingsDict = {
         key: "options",
         value: {
             UseRelativeTime: useRelativeTime,
             UseDailyLargeCheck: useDailyLargeCheck,
+            itemsPerPage: itemsPerPage,
         },
         extra: "",
     };
@@ -2312,6 +2315,7 @@ function displayTabbedOptions() {
             <tp-yt-paper-button id="loadallButton" raised class="" style="margin-top: auto">LOAD ALL NOTIFICATIONS</tp-yt-paper-button>
             <tp-yt-paper-checkbox id="optionRelativeTimeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin: 50px auto 5px auto">Display relative time</tp-yt-paper-checkbox>
             <tp-yt-paper-checkbox id="optionDailyLargeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin: 50px auto 5px auto">Daily large checks</tp-yt-paper-checkbox>
+            <tp-yt-paper-input type="number" id="optionItemsPerPage" label="Notifications Per Page" noink style="font-size: 12pt; margin: 50px auto 5px auto">Notifications Per Page</tp-yt-paper-input>
             <tp-yt-paper-button id="saveButtonOptions" raised class="" style="margin-top: auto; margin-bottom: 0px">SAVE</tp-yt-paper-button>
             <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top: 14px; margin-bottom: 0px">CLOSE</tp-yt-paper-button>
         </div>
@@ -2514,6 +2518,7 @@ function displayTabbedOptions() {
                 useDailyLargeCheck = options[0].value?.UseDailyLargeCheck || false;
                 document.querySelector("#optionRelativeTimeCheckbox").checked = useRelativeTime;
                 document.querySelector("#optionDailyLargeCheckbox").checked = useDailyLargeCheck;
+                document.querySelector("#optionItemsPerPage").value = itemsPerPage;
                 return;
             });
 
