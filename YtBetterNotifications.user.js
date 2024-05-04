@@ -1019,6 +1019,11 @@ function addStyles() {
         align-content: center;
         align-items: center;
         font-size: 1.5em;
+        /* below are for the css transitions */
+        transition: margin, transform, opacity, max-height, visibility;
+        transition-duration: 250ms;
+        max-height: 128px;
+        overflow: clip;
     }
 
     /* same as .notificationsRow */
@@ -1360,7 +1365,11 @@ function addStyles() {
     newstyle.id = "hidelivecss";
     newstyle.innerHTML = `
     .notificationLive {
-        display: none;
+        /* display: none; */
+        max-height: 0px;
+        opacity: 0;
+        visibility: hidden;
+        margin-block: 0;
     }
     `;
     document.head.append(newstyle);
@@ -1371,7 +1380,11 @@ function addStyles() {
     newstyle.id = "hidereadcss";
     newstyle.innerHTML = `
     .notificationRead {
-        display: none;
+        /* display: none; */
+        max-height: 0px;
+        opacity: 0;
+        visibility: hidden;
+        margin-block: 0;
     }
     `;
     document.head.append(newstyle);
@@ -1382,7 +1395,11 @@ function addStyles() {
     newstyle.id = "hiderepliescss";
     newstyle.innerHTML = `
     .notificationComment {
-        display: none;
+        /* display: none; */
+        max-height: 0px;
+        opacity: 0;
+        visibility: hidden;
+        margin-block: 0;
     }
     `;
     document.head.append(newstyle);
