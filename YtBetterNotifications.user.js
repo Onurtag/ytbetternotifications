@@ -1977,10 +1977,15 @@ async function errorButtonClick() {
 
 
 function saveOptions() {
-
     useRelativeTime = document.querySelector("#optionRelativeTimeCheckbox").checked;
     useDailyLargeCheck = document.querySelector("#optionDailyLargeCheckbox").checked;
-    itemsPerPage = document.querySelector("#optionItemsPerPage").value;
+    let perPageElement = document.querySelector("#optionItemsPerPage");
+    if (perPageElement?.validity?.valid) {
+        itemsPerPage = perPageElement.value;
+    } else {
+        alert("SAVE ERROR! \nNotifications Per Page value is invalid. Enter a number between 5-200. \nSave aborted.");
+        return;
+    }
 
     let settingsDict = {
         key: "options",
@@ -2332,7 +2337,7 @@ function displayTabbedOptions() {
             <tp-yt-paper-button id="loadallButton" raised class="" style="margin-top: auto">LOAD ALL NOTIFICATIONS</tp-yt-paper-button>
             <tp-yt-paper-checkbox id="optionRelativeTimeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin: 50px auto 5px auto">Display relative time</tp-yt-paper-checkbox>
             <tp-yt-paper-checkbox id="optionDailyLargeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin: 50px auto 5px auto">Daily large checks</tp-yt-paper-checkbox>
-            <tp-yt-paper-input type="number" id="optionItemsPerPage" label="Notifications Per Page" noink style="font-size: 12pt; margin: 50px auto 5px auto">Notifications Per Page</tp-yt-paper-input>
+            <tp-yt-paper-input type="number" id="optionItemsPerPage" min="5" max="200" label="Notifications Per Page (5-200)" noink style="font-size: 12pt; margin: 50px auto 5px auto">Notifications Per Page</tp-yt-paper-input>
             <tp-yt-paper-button id="saveButtonOptions" raised class="" style="margin-top: auto; margin-bottom: 0px">SAVE</tp-yt-paper-button>
             <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top: 14px; margin-bottom: 0px">CLOSE</tp-yt-paper-button>
         </div>
