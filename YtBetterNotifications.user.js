@@ -1979,8 +1979,8 @@ async function errorButtonClick() {
 function saveOptions() {
     useRelativeTime = document.querySelector("#optionRelativeTimeCheckbox").checked;
     useDailyLargeCheck = document.querySelector("#optionDailyLargeCheckbox").checked;
-    let perPageElement = document.querySelector("#optionItemsPerPage");
-    if (perPageElement?.validity?.valid) {
+    let perPageElement = document.querySelector("#optionItemsPerPage input[type='number']");
+    if (perPageElement?.checkValidity()) {
         itemsPerPage = perPageElement.value;
     } else {
         alert("SAVE ERROR! \nNotifications Per Page value is invalid. Enter a number between 5-200. \nSave aborted.");
