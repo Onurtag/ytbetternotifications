@@ -391,7 +391,7 @@ function filterPage() {
     //set filter string, should be blank "" by default
     filterString = document.querySelector("#sidebuttonsTop #sidebarFilterInput").value;
     // Reload notifications
-    cleanTable();
+    cleanTable(false);
     loadNotifications(0).then(function (result) {
         console.log("🚀 ~ filterPage result:", { result });
         if (result != 0) {
@@ -405,7 +405,7 @@ function previousPage(event) {
     if (currentPage == 0) {
         return;
     }
-    cleanTable();
+    cleanTable(false);
     loadNotifications(currentPage - 1).then(function (result) {
         --currentPage;
         setupPaginationButtons();
@@ -417,7 +417,7 @@ function nextPage(event) {
     if (currentPage == maxPages - 1) {
         return;
     }
-    cleanTable();
+    cleanTable(false);
     loadNotifications(currentPage + 1).then(function (result) {
         ++currentPage;
         setupPaginationButtons();
@@ -430,7 +430,7 @@ function firstPage(event) {
     if (currentPage == 0) {
         return;
     }
-    cleanTable();
+    cleanTable(false);
     loadNotifications(0).then(function (result) {
         currentPage = 0;
         setupPaginationButtons();
@@ -442,7 +442,7 @@ function lastPage(event) {
     if (currentPage == maxPages - 1) {
         return;
     }
-    cleanTable();
+    cleanTable(false);
     loadNotifications(maxPages - 1).then(function (result) {
         currentPage = maxPages - 1;
         setupPaginationButtons();
@@ -532,8 +532,12 @@ function hideReplies(event) {
     document.querySelector("#hiderepliescss").disabled = !document.querySelector("#hiderepliescss").disabled;
 }
 
-function cleanTable() {
-    document.querySelector("#innerNotifications").innerHTML = "";
+function cleanTable(removeButtons = true) {
+    if (removeButtons) {
+        document.querySelector("#innerNotifications").innerHTML = "";
+    } else {
+        document.querySelector("#innerNotifications").innerHTML = document.querySelector("#innerNotifications > #pagingButtonsOuter").outerHTML;
+    }
 }
 
 async function saveNotifications(nC) {
@@ -2266,6 +2270,7 @@ function sidebarFilterBlur(event) {
 async function setupPaginationButtons() {
 
     let pagingButtonsDiv = document.createElement("div");
+    pagingButtonsDiv.id = "pagingButtonsOuter";
     //LATER instead of using a fixed position, put the buttons and innernotifications in another container div
     pagingButtonsDiv.setAttribute("style", `
         position: fixed;
@@ -2295,6 +2300,12 @@ async function setupPaginationButtons() {
     </div>
     `;
     divHTML = divHTML.replace('CURRENTPAGENUMBER', currentPage + 1);
+
+    //If the previous buttons are still there, remove them.
+    const pagingButtonsOuter = document.querySelector("#innerNotifications > #pagingButtonsOuter");
+    if (pagingButtonsOuter) {
+        pagingButtonsOuter.remove();
+    }
 
     document.querySelector("#innerNotifications").append(pagingButtonsDiv);
     pagingButtonsDiv.innerHTML = divHTML;
