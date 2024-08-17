@@ -35,7 +35,7 @@ const MAX_LOG_SIZE = 600,
 
 ytbnDebugEmail = false;
 console.time("YTBN");
-console.log("🚀 YTBN ~ ", {ytbnDebugEmail});
+console.log("🚀 YTBN ~ ", { ytbnDebugEmail });
 
 let dontSendEmailsOver = 150;
 let itemsPerPage = 50;
@@ -206,7 +206,7 @@ function scrollNotifications(scrolltimes = 1, interval = 155) {
                 lastNode.scrollIntoView();
                 scrollcount++;  //cosmetic
             } catch (error) {
-                console.log("🚀 YTBN ~ scrolling error:", {error});
+                console.log("🚀 YTBN ~ scrolling error:", { error });
             }
         } else {
             //---FORWARD Scrolling finished---
@@ -347,7 +347,7 @@ async function importDB(event) {
         console.log("🚀 YTBN ~ Import complete.");
         return;
     } catch (error) {
-        console.error('🚀 YTBN ~ File import error: ', {error});
+        console.error('🚀 YTBN ~ File import error: ', { error });
     }
 }
 
@@ -393,7 +393,7 @@ function filterPage() {
     // Reload notifications
     cleanTable();
     loadNotifications(0).then(function (result) {
-        console.log("🚀 ~ filterPage result:", {result});
+        console.log("🚀 ~ filterPage result:", { result });
         if (result != 0) {
             setupPaginationButtons();
         }
@@ -606,7 +606,7 @@ async function saveNotifications(nC) {
             return "alreadyexists";
         }
 
-        console.log("🚀 YTBN ~ saveNotifications -> currDict", {currDict});
+        console.log("🚀 YTBN ~ saveNotifications -> currDict", { currDict });
 
         //detect livestreams
         if (currDict.title.includes(" is live: ")) {
@@ -642,7 +642,7 @@ async function saveNotifications(nC) {
         return dbput;
     }));
 
-    console.log("🚀 YTBN ~ saveNotifications ~ promiseResults:", {promiseResults});
+    console.log("🚀 YTBN ~ saveNotifications ~ promiseResults:", { promiseResults });
 
     //get db size and set max pages
     const itemcount = await db.notifications
@@ -830,7 +830,7 @@ async function checkboxReadClicked(event) {
     let rowId = eventRow.dataset.id;
 
     if (rowId == "" || !rowId) {
-        console.log("🚀 YTBN ~ Error while reading row ID", {rowId});
+        console.log("🚀 YTBN ~ Error while reading row ID", { rowId });
         return "Error while reading row ID";
     }
 
@@ -852,7 +852,7 @@ async function checkboxReadClicked(event) {
         } else {
             eventRow.classList.remove("notificationRead");
         }
-        console.log(`🚀 YTBN ~ Notification set as ${readvalue ? "Read" : "Unread"}:`, {notifTitle}, {notifVidURL}, {rowId});
+        console.log(`🚀 YTBN ~ Notification set as ${readvalue ? "Read" : "Unread"}:`, { notifTitle }, { notifVidURL }, { rowId });
         return result;
     }).catch(Dexie.ModifyError, function (e) {
         console.error("🚀 YTBN ~ failed to modify read value", e.failures.length);
@@ -1428,14 +1428,16 @@ function addStyles() {
 
 /* jshint ignore:start */
 /* beautify ignore:start */
-/* SmtpJS from https://smtpjs.com/v3/smtp.js start */
+/* prettier-ignore */
 
+/* SmtpJS from https://smtpjs.com/v3/smtp.js start */
 /* SmtpJS.com - v3.0.0 */
 var Email = { send: function (a) { return new Promise(function (n, e) { a.nocache = Math.floor(1e6 * Math.random() + 1), a.Action = "Send"; var t = JSON.stringify(a); Email.ajaxPost("https://smtpjs.com/v3/smtpjs.aspx?", t, function (e) { n(e) }) }) }, ajaxPost: function (e, n, t) { var a = Email.createCORSRequest("POST", e); a.setRequestHeader("Content-type", "application/x-www-form-urlencoded"), a.onload = function () { var e = a.responseText; null != t && t(e) }, a.send(n) }, ajax: function (e, n) { var t = Email.createCORSRequest("GET", e); t.onload = function () { var e = t.responseText; null != n && n(e) }, t.send() }, createCORSRequest: function (e, n) { var t = new XMLHttpRequest; return "withCredentials" in t ? t.open(e, n, !0) : "undefined" != typeof XDomainRequest ? (t = new XDomainRequest).open(e, n) : t = null, t } };
-
 /* SmtpJS end */
+
 /* jshint ignore:end */
 /* beautify ignore:end */
+/* prettier-ignore-end */
 
 function testEmail() {
     let videoDictArray = [];
@@ -1482,7 +1484,7 @@ function testEmail() {
     };
     videoDictArray.push(testDict);
 
-    console.log("🚀 YTBN ~ testEmail -> videoDictArray", {videoDictArray});
+    console.log("🚀 YTBN ~ testEmail -> videoDictArray", { videoDictArray });
 
     const sendingemail = sendEmailBatch(videoDictArray).then(function (result) {
         console.log("🚀 YTBN ~ TEST EMAILS SENT.");
@@ -1501,7 +1503,7 @@ async function cleanLogsOverQuota() {
             .orderBy("number")
             .offset(0).limit(LOG_PURGE_AMOUNT)
             .delete();
-        console.log("🚀 YTBN ~ cleanLogsOverQuota ~ Purged logs over quota - ", {purgedLogs});
+        console.log("🚀 YTBN ~ cleanLogsOverQuota ~ Purged logs over quota - ", { purgedLogs });
         return;
     } else {
         return;
@@ -1551,7 +1553,7 @@ async function sendEmailBatch(videoDictArray) {
         }
     }
 
-    console.log("🚀 YTBN ~ sendEmailBatch -> emailSendArray", {emailSendArray});
+    console.log("🚀 YTBN ~ sendEmailBatch -> emailSendArray", { emailSendArray });
 
     //Email batch size. Keeping this small should help prevent sent emails from being detected as spam.
     let emailBatchSize = 3;
@@ -1562,13 +1564,13 @@ async function sendEmailBatch(videoDictArray) {
             try {
                 return sendEmail(videoDict);
             } catch (e) {
-                console.log(`🚀 YTBN ~ Error in sending email for`, {videoDict}, {e});
+                console.log(`🚀 YTBN ~ Error in sending email for`, { videoDict }, { e });
             }
         });
 
         await Promise.all(emailBatch)
             .catch(e => {
-                console.log(`🚀 YTBN ~ Error in sending email for the batch`, {i}, {e});
+                console.log(`🚀 YTBN ~ Error in sending email for the batch`, { i }, { e });
             });
 
     }
@@ -1792,7 +1794,7 @@ async function sendEmail(videoDict) {
                 subjectVal,
                 bodyVal
             ).then(message => {
-                console.log("🚀 YTBN ~ Email.send response: ", {message});
+                console.log("🚀 YTBN ~ Email.send response: ", { message });
                 return message;
             });
 
@@ -1805,7 +1807,7 @@ async function sendEmail(videoDict) {
                 Subject: subjectVal,
                 Body: bodyVal,
             }).then(message => {
-                console.log("🚀 YTBN ~ Email.send response: ", {message});
+                console.log("🚀 YTBN ~ Email.send response: ", { message });
                 return message;
             });
 
@@ -1820,17 +1822,17 @@ async function sendEmail(videoDict) {
                 Subject: subjectVal,
                 Body: bodyVal,
             }).then(message => {
-                console.log("🚀 YTBN ~ Email.send response: ", {message});
+                console.log("🚀 YTBN ~ Email.send response: ", { message });
                 return message;
             });
         } else {
-            console.error("❗❗❗❗❗ 🚀 YTBN ~ Email.send ERROR: ALL EMAIL SEND METHODS FAILED! Try re-authenticating gmail in options.", {message});
+            console.error("❗❗❗❗❗ 🚀 YTBN ~ Email.send ERROR: ALL EMAIL SEND METHODS FAILED! Try re-authenticating gmail in options.", { message });
         }
 
         //Retry sending email up to 3 times
         if ((emailSendResponse != "OK") && (emailSendResponse.statusText != "OK") && (emailSendResponse.result.labelIds.includes("SENT") == false)) {
             //Email send failure. Retrying...
-            console.log("🚀 YTBN ~ sendEmail -> retryEmail", {retryEmail});
+            console.log("🚀 YTBN ~ sendEmail -> retryEmail", { retryEmail });
             retryEmail++;
         } else {
             //Email send success.
@@ -1858,7 +1860,7 @@ async function sendEmail(videoDict) {
         //Failure: Email_Send_Failure log type
     }
 
-    console.log("🚀 YTBN ~ sendEmail -> logDict", {logDict});
+    console.log("🚀 YTBN ~ sendEmail -> logDict", { logDict });
 
     //Update the log
     if (videoDict.log_number != "disabled") {
@@ -1920,7 +1922,7 @@ async function readSettings() {
         }
 
     } catch (error) {
-        console.log("🚀 YTBN ~ readSettings error:", {error});
+        console.log("🚀 YTBN ~ readSettings error:", { error });
     }
 
 }
@@ -1951,7 +1953,7 @@ async function checkErrorLogs() {
 
 async function errorButtonClick() {
     let errored_logs = await checkErrorLogs();
-    console.log("🚀 YTBN ~ errorButtonClick ~ errored_logs", {errored_logs});
+    console.log("🚀 YTBN ~ errorButtonClick ~ errored_logs", { errored_logs });
     if (errored_logs.length > 0) {
         var r = confirm("Would you like to re-send all errored emails?");
         if (r != true) {
@@ -1964,7 +1966,7 @@ async function errorButtonClick() {
             //Add the log_number if it doesn't exist (Email_After_dbput)
             notifData.log_number = notifData.log_number || thislog.number;
             emailArray.push(notifData);
-            console.log("🚀 YTBN ~ errorButtonClick ~ notifData", {notifData});
+            console.log("🚀 YTBN ~ errorButtonClick ~ notifData", { notifData });
         });
         // //only keep the first 24 emails in emailArray (for manual batching to avoid being detected as an email spammer)
         // emailArray = emailArray.slice(0, 24);
@@ -2545,7 +2547,7 @@ function displayTabbedOptions() {
             });
 
     } catch (error) {
-        console.log("🚀 YTBN ~ displayTabbedOptions -> error", {error});
+        console.log("🚀 YTBN ~ displayTabbedOptions -> error", { error });
     }
 
     //Finally, unhide the options menu
