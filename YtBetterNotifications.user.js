@@ -391,8 +391,8 @@ function filterPage() {
     //set filter string, should be blank "" by default
     filterString = document.querySelector("#sidebuttonsTop #sidebarFilterInput").value;
     // Reload notifications
-    cleanTable(false);
-    loadNotifications(0).then(function (result) {
+    // cleanTable(false);
+    loadNotifications(0, true).then(function (result) {
         console.log("🚀 ~ filterPage result:", { result });
         if (result != 0) {
             setupPaginationButtons();
@@ -405,8 +405,8 @@ function previousPage(event) {
     if (currentPage == 0) {
         return;
     }
-    cleanTable(false);
-    loadNotifications(currentPage - 1).then(function (result) {
+    // cleanTable(false);
+    loadNotifications(currentPage - 1, true).then(function (result) {
         --currentPage;
         setupPaginationButtons();
         return result;
@@ -417,8 +417,8 @@ function nextPage(event) {
     if (currentPage == maxPages - 1) {
         return;
     }
-    cleanTable(false);
-    loadNotifications(currentPage + 1).then(function (result) {
+    // cleanTable(false);
+    loadNotifications(currentPage + 1, true).then(function (result) {
         ++currentPage;
         setupPaginationButtons();
         return result;
@@ -430,8 +430,8 @@ function firstPage(event) {
     if (currentPage == 0) {
         return;
     }
-    cleanTable(false);
-    loadNotifications(0).then(function (result) {
+    // cleanTable(false);
+    loadNotifications(0, true).then(function (result) {
         currentPage = 0;
         setupPaginationButtons();
         return result;
@@ -442,8 +442,8 @@ function lastPage(event) {
     if (currentPage == maxPages - 1) {
         return;
     }
-    cleanTable(false);
-    loadNotifications(maxPages - 1).then(function (result) {
+    // cleanTable(false);
+    loadNotifications(maxPages - 1, true).then(function (result) {
         currentPage = maxPages - 1;
         setupPaginationButtons();
         return result;
@@ -664,7 +664,7 @@ async function saveNotifications(nC) {
     }
 }
 
-async function loadNotifications(page = 0) {
+async function loadNotifications(page = 0, clearNotifs = false) {
     try {
         let filteredCollection = null;
         if (filterString == "") {
@@ -706,6 +706,10 @@ async function loadNotifications(page = 0) {
             .then(function (result) {
                 return result;
             });
+
+        if (clearNotifs) {
+            cleanTable(false);
+        }
 
         notificationsArray.forEach(dict => {
             displayNotification(dict);
