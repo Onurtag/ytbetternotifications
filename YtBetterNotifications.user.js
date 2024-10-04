@@ -137,7 +137,7 @@ function startup() {
                     clearInterval(startInterval2);
 
                     //default scroll settings
-                    let scrolls = 1;
+                    let scrolls = 2;
                     let scrollInterval = 155;
                     largeCheck = false;
 
@@ -147,7 +147,7 @@ function startup() {
                         //86400000 = 1 day
                         if (!storedTime || nowTime > storedTime + 86000000) {
                             //daily long scroll settings
-                            scrolls = 2;
+                            scrolls = 3;
                             scrollInterval = 195;
                             largeCheck = true;
                         }
