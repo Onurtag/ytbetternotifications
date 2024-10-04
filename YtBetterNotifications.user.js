@@ -56,7 +56,7 @@ LATER MAYBE: Email error log window with a table
 LATER MAYBE: Switch to a build setup (separate js, css, html files) BUT; for now I don't need it as I use Template Literal Editor.
 
 --other info--
-1. alternative youtube library: https://github.com/LuanRT/YouTube.js 
+1. alternative youtube library: https://github.com/LuanRT/YouTube.js
     + node.js
     + has notifications
     + cookies or oauth
@@ -256,7 +256,7 @@ function continuing(nC) {
 
         //Close notifications panel
         buttonElement.click();
-        //Disable smaller notifications panel 
+        //Disable smaller notifications panel
         document.querySelector("#smallernotpanel").disabled = true;
         return;
 
@@ -908,7 +908,7 @@ function reversefromNow(input) {
         w: "week",
         y: "year"
     };
-    //Detect number value 
+    //Detect number value
     const regex = /(\d+)/g;
     let numbervalue = input.match(regex) || [1];
     //Add if future, subtract if past
@@ -1029,7 +1029,7 @@ function addStyles() {
         font-size: 1.5em;
         /* below are for the css transitions */
         transition: margin, transform, opacity, max-height, visibility;
-        transition-duration: 250ms;
+        transition-duration: 170ms;
         max-height: 128px;
         overflow: clip;
     }
@@ -1622,7 +1622,7 @@ async function sendEmail(videoDict) {
             if (thescript.innerHTML.includes('window["ytInitialData"]')) {
                 // Also thescript.innerHTML.match(/window\[\"ytInitialData\"\] = (.*);\n\s*window\[\"ytInitialPlayerResponse/)[1];
                 ytInitialData_PARSED = JSON.parse(thescript.innerHTML.split("window[\"ytInitialData\"] = ")[1].split("ytInitialPlayerResponse")[0].split(";\n")[0]);
-                // Also ... 
+                // Also ...
                 ytInitialPlayerResponse_PARSED = JSON.parse(thescript.innerHTML.split("window[\"ytInitialPlayerResponse\"] = ")[1].split("window.ytcsi")[0].split(";\n")[0]);
             }
 
@@ -1645,7 +1645,7 @@ async function sendEmail(videoDict) {
         //Get the best possible values from the fetched page.
         //Might be useless to double check but they can stay just in case.
 
-        // Handle videoDict.title 
+        // Handle videoDict.title
         // DONE Comments should not change their titles.
         if (!videoDict.notvideo) {
 
@@ -1884,7 +1884,7 @@ async function sendEmail(videoDict) {
 
     return emailSendResponse;
 
-    // (extras for Email.send)    
+    // (extras for Email.send)
     // Attachments: [{
     //     name : "smtpjs.png",
     //     path:"https://networkprogramming.files.wordpress.com/2017/11/smtpjs.png"
@@ -2446,7 +2446,7 @@ function displayTabbedOptions() {
     });
 
     /* Base tabbed material panel from https://codepen.io/LukyVj/pen/yNwgrK */
-    // TOGGLE SECTIONS  
+    // TOGGLE SECTIONS
     // Define tabs, write down them classes
     var tabs = [
         '.tabbed-section__selector-tab-1',
@@ -2461,7 +2461,7 @@ function displayTabbedOptions() {
         // Do things on click
         document.querySelectorAll(element)[0].addEventListener('click', function () {
             // Remove the active class on all tabs.
-            // climbing up the DOM tree with `parentNode` and target 
+            // climbing up the DOM tree with `parentNode` and target
             // the children ( the tabs ) with childNodes
             this.parentNode.childNodes[1].classList.remove('active');
             this.parentNode.childNodes[3].classList.remove('active');
@@ -2507,7 +2507,7 @@ function displayTabbedOptions() {
         });
     };
 
-    // Then finally, iterates through all tabs, to activate the 
+    // Then finally, iterates through all tabs, to activate the
     // tabs system.
     for (var i = tabs.length - 1; i >= 0; i--) {
         toggleTab(tabs[i]);
