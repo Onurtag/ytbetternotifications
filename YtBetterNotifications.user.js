@@ -392,11 +392,10 @@ function filterPage() {
     filterString = document.querySelector("#sidebuttonsTop #sidebarFilterInput").value;
     // Reload notifications
     // cleanTable(false);
-    loadNotifications(0, true).then(function (result) {
+    currentPage = 0;
+    loadNotifications(0).then(function (result) {
         console.log("🚀 ~ filterPage result:", { result });
-        if (result != 0) {
-            setupPaginationButtons();
-        }
+        setupPaginationButtons(result);
         return result;
     });
 }
@@ -406,7 +405,7 @@ function previousPage(event) {
         return;
     }
     // cleanTable(false);
-    loadNotifications(currentPage - 1, true).then(function (result) {
+    loadNotifications(currentPage - 1).then(function (result) {
         --currentPage;
         setupPaginationButtons();
         return result;
@@ -418,7 +417,7 @@ function nextPage(event) {
         return;
     }
     // cleanTable(false);
-    loadNotifications(currentPage + 1, true).then(function (result) {
+    loadNotifications(currentPage + 1).then(function (result) {
         ++currentPage;
         setupPaginationButtons();
         return result;
@@ -431,7 +430,7 @@ function firstPage(event) {
         return;
     }
     // cleanTable(false);
-    loadNotifications(0, true).then(function (result) {
+    loadNotifications(0).then(function (result) {
         currentPage = 0;
         setupPaginationButtons();
         return result;
@@ -443,7 +442,7 @@ function lastPage(event) {
         return;
     }
     // cleanTable(false);
-    loadNotifications(maxPages - 1, true).then(function (result) {
+    loadNotifications(maxPages - 1).then(function (result) {
         currentPage = maxPages - 1;
         setupPaginationButtons();
         return result;
@@ -533,10 +532,13 @@ function hideReplies(event) {
 }
 
 function cleanTable(removeButtons = true) {
-    if (removeButtons) {
-        document.querySelector("#innerNotifications").innerHTML = "";
-    } else {
-        document.querySelector("#innerNotifications").innerHTML = document.querySelector("#innerNotifications > #pagingButtonsOuter").outerHTML;
+    const innerNotifications = document.querySelector("#innerNotifications");
+    if (innerNotifications) {
+        if (removeButtons) {
+            innerNotifications.innerHTML = "";
+        } else {
+            innerNotifications.innerHTML = innerNotifications.querySelector("#pagingButtonsOuter")?.outerHTML || "";
+        }
     }
 }
 
@@ -664,7 +666,7 @@ async function saveNotifications(nC) {
     }
 }
 
-async function loadNotifications(page = 0, clearNotifs = false) {
+async function loadNotifications(page = 0) {
     try {
         let filteredCollection = null;
         if (filterString == "") {
@@ -692,6 +694,7 @@ async function loadNotifications(page = 0, clearNotifs = false) {
 
         if (itemcount == 0) {
             document.querySelector("#outerNotifications #innerNotifications").classList.add("empty");
+            cleanTable(false);
             //stop here
             return itemcount;
         } else {
@@ -707,9 +710,8 @@ async function loadNotifications(page = 0, clearNotifs = false) {
                 return result;
             });
 
-        if (clearNotifs) {
-            cleanTable(false);
-        }
+        //Clear notifications right before inserting the new ones (for smoothness)
+        cleanTable(false);
 
         notificationsArray.forEach(dict => {
             displayNotification(dict);
@@ -989,8 +991,8 @@ function addStyles() {
         align-items: center;
     }
 
-    /* Message for when there are no notifications */
-    #innerNotifications.empty:empty:before {
+    /* Message for when there are no notifications (rchk :empty selector is slow?) */
+    #innerNotifications.empty:before {
         content: "No notifications were found.\\a Suggestion: Clear the filter.";
         font-size: 18pt;
         text-align: center;
@@ -2271,7 +2273,16 @@ function sidebarFilterBlur(event) {
     }, 200);
 }
 
-async function setupPaginationButtons() {
+async function setupPaginationButtons(notifcount = 999) {
+    //If the previous buttons are still there, remove them.
+    const pagingButtonsOuter = document.querySelector("#innerNotifications > #pagingButtonsOuter");
+    if (pagingButtonsOuter) {
+        pagingButtonsOuter.remove();
+    }
+    //Return if there are no notifications to display
+    if (notifcount == 0) {
+        return;
+    }
 
     let pagingButtonsDiv = document.createElement("div");
     pagingButtonsDiv.id = "pagingButtonsOuter";
@@ -2305,11 +2316,6 @@ async function setupPaginationButtons() {
     `;
     divHTML = divHTML.replace('CURRENTPAGENUMBER', currentPage + 1);
 
-    //If the previous buttons are still there, remove them.
-    const pagingButtonsOuter = document.querySelector("#innerNotifications > #pagingButtonsOuter");
-    if (pagingButtonsOuter) {
-        pagingButtonsOuter.remove();
-    }
 
     document.querySelector("#innerNotifications").append(pagingButtonsDiv);
     pagingButtonsDiv.innerHTML = divHTML;
