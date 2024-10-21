@@ -717,6 +717,9 @@ async function loadNotifications(page = 0) {
             displayNotification(dict);
         });
 
+        //Scroll to the top of the list for consistence (scroll to buttom when going to a previous page?)
+        document.querySelector("#innerNotifications > .notificationsRow")?.scrollIntoView();
+
         // console.log("🚀 ~ loadNotifications ~ itemcount:", itemcount);
         return itemcount;
     } catch (error) {
