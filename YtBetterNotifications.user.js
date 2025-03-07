@@ -34,7 +34,6 @@ const MAX_LOG_SIZE = 600,
     LOG_PURGE_AMOUNT = 100;
 
 ytbnDebugEmail = false;
-console.time("YTBN");
 console.log("🚀 YTBN ~ ", { ytbnDebugEmail });
 
 let dontSendEmailsOver = 150;
@@ -173,6 +172,7 @@ function startup() {
 }
 
 function scrollNotifications(scrolltimes = 1, interval = 155) {
+    console.time("YTBN");
 
     cleanLogsOverQuota();
 
@@ -183,33 +183,35 @@ function scrollNotifications(scrolltimes = 1, interval = 155) {
         nullcount = 0,
         fixCount = 0,
         toBeFixed = 0,
-        maxnullcount = 34, //Minimum 4. Increase this if you have a small interval timer
+        maxnullcount = (scrolltimes > 500) ? 75 : 35, //Increase this if you have a small interval timer (or if you want to guarantee loading of the pages)
         finalAmount = -1,
         startedChecking = false;
-    let prev_lastNode;
+    let prev_notifLast;
 
     let scrollInterval = setInterval(() => {
         //verify and correct scroll count
-        let notificationcount = document.querySelectorAll("ytd-notification-renderer").length;
-        if (scrollcount != notificationcount / 20) {
-            scrollcount = notificationcount / 20;
+        let notifs = document.querySelectorAll("ytd-notification-renderer");
+        let notifCount = notifs.length;
+        let notifFirst = notifs[0];
+        let notifLast = notifs[notifs.length - 1];
+        if (scrollcount != notifCount / 20) {
+            scrollcount = notifCount / 20;
         }
         if (!startedChecking && (scrollcount <= scrolltimes) && (nullcount <= maxnullcount)) {
             try {
                 //document.querySelector('[menu-style="multi-page-menu-style-type-notifications"] ytd-continuation-item-renderer').scrollIntoView();
-                let lastNode = document.querySelector("ytd-notification-renderer:last-of-type");
-                if (lastNode == prev_lastNode) {
+                if (notifLast == prev_notifLast) {
                     nullcount++;
                     if (nullcount % 2 == 0) {
                         //Scroll up and down to trigger loading again
-                        document.querySelector("ytd-notification-renderer:first-of-type").scrollIntoView();
+                        notifFirst.scrollIntoView();
                     }
                 } else {
                     //reset nullcount whenever we successfully do a scroll
                     nullcount = 0;
-                    prev_lastNode = lastNode;
+                    prev_notifLast = notifLast;
                 }
-                lastNode.scrollIntoView();
+                notifLast.scrollIntoView();
                 scrollcount++;  //cosmetic
             } catch (error) {
                 console.log("🚀 YTBN ~ scrolling error:", { error });
@@ -221,15 +223,14 @@ function scrollNotifications(scrolltimes = 1, interval = 155) {
             startedChecking = true;
             // console.log("🚀 YTBN ~ attempting to fix:", fixCount++);
             //Scroll lazy nodes to wake them up (load lazy loaded images & urls)
-            let loadedNotifs = document.querySelectorAll("ytd-notification-renderer");
             if (finalAmount == -1) {
-                finalAmount = loadedNotifs.length;
+                finalAmount = notifCount;
             }
-            // loadedNotifs.slice(0, finalAmount); //requires [...blabla]
+            // notifs.slice(0, finalAmount); //requires [...blahblah]
             let count = 0;
             toBeFixed = 0;
             for (let index = 0; index < finalAmount; index++) {
-                const element = loadedNotifs[index];
+                const element = notifs[index];
                 if (element.querySelector("img[src]")) {
                     count++;
                 } else {
@@ -250,7 +251,7 @@ function scrollNotifications(scrolltimes = 1, interval = 155) {
                 continuing(count);
             }
         }
-        console.log("🚀 YTBN ~ scrollInterval ~ notificationcount:", notificationcount, "nullcount:", nullcount, "toBeFixed:", toBeFixed);
+        console.log("🚀 YTBN ~ scrollInterval ~ notificationcount:", notifCount, "nullcount:", nullcount, "toBeFixed:", toBeFixed);
     }, interval);
 }
 
@@ -529,8 +530,7 @@ async function saveNotifications(nC) {
     //let nodeArray = Array.from(document.querySelectorAll("ytd-notification-renderer"));
     //Re-parse the notifications container node to work on it. Usual methods like .children, .firstElementChild are set to null on youtube's custom nodes.
     let parser = new DOMParser();
-    let container = parser.parseFromString(document.querySelector("ytd-notification-renderer").parentElement.outerHTML, 'text/html');
-    container = container.body.firstElementChild;
+    let container = parser.parseFromString(document.querySelector("ytd-notification-renderer").closest("tp-yt-iron-dropdown").outerHTML, 'text/html');
     let nodeArray = [...container.querySelectorAll("ytd-notification-renderer")];
     nodeArray = nodeArray.slice(0, nC);
 
