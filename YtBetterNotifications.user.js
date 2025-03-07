@@ -7,10 +7,10 @@
 // @match           https://www.youtube.com/new*
 // @match           https://www.youtube.com/reporthistory*
 // @grant           none
-// @require         https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment-with-locales.min.js
-// @require         https://cdnjs.cloudflare.com/ajax/libs/dexie/3.2.6/dexie.min.js
+// @require         https://cdn.jsdelivr.net/npm/moment@2.30.1/min/moment-with-locales.min.js
+// @require         https://cdn.jsdelivr.net/npm/dexie@4.0/dist/dexie.min.js
 // @require         https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js
-// @require         https://cdn.jsdelivr.net/npm/dexie-export-import@4.1.1/dist/dexie-export-import.min.js
+// @require         https://cdn.jsdelivr.net/npm/dexie-export-import@4.1/dist/dexie-export-import.min.js
 // @require         https://cdn.jsdelivr.net/npm/js-base64@3.7.7/base64.min.js
 // @run-at          document-idle
 // ==/UserScript==
