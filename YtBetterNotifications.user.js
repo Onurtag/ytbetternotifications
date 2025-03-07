@@ -119,6 +119,12 @@ function startup() {
         //Setup the notifications div (with the "loading..." spinner)
         addStyles();
         setupNotificationDiv();
+
+        //Turn some sidebar options on by default
+        document.querySelector("#sidebuttons #livetransparencyCheckbox").click();
+        document.querySelector("#sidebuttons #readtransparencyCheckbox").click();
+        document.querySelector("#sidebuttons #commenttransparencyCheckbox").click();
+
         //Check if there are any existing failure logs (and update the button)
         await checkErrorLogs();
 
@@ -320,7 +326,7 @@ function fileInputOnchange(event) {
 }
 
 async function importDB(event) {
-    var r = confirm("Are you sure? This will delete all your current data.");
+    let r = confirm("Are you sure? This will delete all your current data.");
     if (r != true) {
         return;
     }
@@ -372,7 +378,7 @@ async function setupDB() {
     //
     // }).upgrade(trans => {
     //     /*
-    //     var YEAR = 365 * 24 * 60 * 60 * 1000;
+    //     let YEAR = 365 * 24 * 60 * 60 * 1000;
     //     return trans.friends.toCollection().modify (friend => {
     //         friend.birthdate = new Date(Date.now() - (friend.age * YEAR));
     //         delete friend.age;
@@ -450,7 +456,7 @@ function lastPage(event) {
 }
 
 function discardLogs(event) {
-    var r = confirm("Are you sure you want to discard all logs?");
+    let r = confirm("Are you sure you want to discard all logs?");
     if (r != true) {
         return;
     }
@@ -460,7 +466,7 @@ function discardLogs(event) {
 }
 
 function discardNotifications(event) {
-    var r = confirm("Are you sure you want to clear the notification database?");
+    let r = confirm("Are you sure you want to clear the notification database?");
     if (r != true) {
         return;
     }
@@ -471,7 +477,7 @@ function discardNotifications(event) {
 }
 
 function discardSettings(event) {
-    var r = confirm("Are you sure you want to clear all settings?");
+    let r = confirm("Are you sure you want to clear all settings?");
     if (r != true) {
         return;
     }
@@ -507,30 +513,6 @@ function loadAll(event) {
     scrollNotifications(6666);
 }
 
-function livetransparency(event) {
-    document.querySelector("#livetransparencycss").disabled = !document.querySelector("#livetransparencycss").disabled;
-}
-
-function readtransparency(event) {
-    document.querySelector("#readtransparencycss").disabled = !document.querySelector("#readtransparencycss").disabled;
-}
-
-function commenttransparency(event) {
-    document.querySelector("#commenttransparencycss").disabled = !document.querySelector("#commenttransparencycss").disabled;
-}
-
-function hideLive(event) {
-    document.querySelector("#hidelivecss").disabled = !document.querySelector("#hidelivecss").disabled;
-}
-
-function hideRead(event) {
-    document.querySelector("#hidereadcss").disabled = !document.querySelector("#hidereadcss").disabled;
-}
-
-function hideReplies(event) {
-    document.querySelector("#hiderepliescss").disabled = !document.querySelector("#hiderepliescss").disabled;
-}
-
 function cleanTable(removeButtons = true) {
     const innerNotifications = document.querySelector("#innerNotifications");
     if (innerNotifications) {
@@ -562,13 +544,14 @@ async function saveNotifications(nC) {
             rowUrl = rowUrl.replace(/&pp=.*/, "")
         }
 
-        //if the notification thumbnail images aren't there, skip.
-        let userImg = element.querySelectorAll("img")[0]?.src || "";
+        // if the notification thumbnail images aren't there, skip.
+        let images = element.querySelectorAll("img");
+        let userImg = images[0]?.src || "";
         // if (!userImg) {
         //     return "userimagedidnotload";
         // }
 
-        let videoImage = element.querySelectorAll("img")[1]?.src || "";
+        let videoImage = images[1]?.src || "";
         // if (!videoImage) {
         //     return "videoimagedidnotload";
         // }
@@ -785,14 +768,16 @@ function displayNotification(currDict) {
     }
 
     //Replace dummy values
-    //LATER Can use ${var}
-    elemHTML = elemHTML.replace("ROWDUMMYROW1", col1);
-    elemHTML = elemHTML.replace("ROWDUMMYROW2", col2);
-    elemHTML = elemHTML.replace("ROWDUMMYROW3", col3);
-    elemHTML = elemHTML.replace("ROWDUMMYROW4", col4);
-    elemHTML = elemHTML.replace("READCHECKED", col5);
-    //Could have used a row number - id hashmap instead here
-    elemHTML = elemHTML.replace("DUMMYDATASETID", currDict.id);
+    const replacements = {
+        ROWDUMMYROW1: col1,
+        ROWDUMMYROW2: col2,
+        ROWDUMMYROW3: col3,
+        ROWDUMMYROW4: col4,
+        READCHECKED: col5,
+        //Could have used a row number - id hashmap instead here
+        DUMMYDATASETID: currDict.id
+    };
+    Object.keys(replacements).forEach(key => elemHTML = elemHTML.replace(key, replacements[key]));
 
     document.querySelector("#innerNotifications").append(elemDiv);
     elemDiv.outerHTML = elemHTML;
@@ -804,7 +789,7 @@ function displayNotification(currDict) {
 async function togglereadAll(event) {
     let theCheckbox = event.target.closest("tp-yt-paper-checkbox");
 
-    var r = confirm("Are you sure? This can not be undone! (unless you export your notifications)");
+    let r = confirm("Are you sure? This can not be undone! (unless you export your notifications)");
     if (r != true) {
         theCheckbox.checked = !theCheckbox.checked;
         return;
@@ -1332,52 +1317,33 @@ function addStyles() {
         border: 1px #f009 solid;
         filter: drop-shadow(0px 0px 4px #ff3e3e);
     }
-    `;
-    document.head.append(newstyle);
-    //document.querySelector("#tabbedoptionscss").disabled = false;
 
-
-    //Low Opacity livestreams css
-    newstyle = document.createElement("style");
-    newstyle.id = "livetransparencycss";
-    newstyle.innerHTML = `
-    .notificationLive {
+    /* opacity and hide toggles */
+    #innerNotifications.opacitylive .notificationLive {
         opacity: 36%;
     }
-    `;
-    document.head.append(newstyle);
-    //Enabled by default
-    //document.querySelector("#livetransparencycss").disabled = true;
-
-    //Low Opacity read css
-    newstyle = document.createElement("style");
-    newstyle.id = "readtransparencycss";
-    newstyle.innerHTML = `
-    .notificationRead {
+    #innerNotifications.opacityread .notificationRead {
         opacity: 36%;
     }
-    `;
-    document.head.append(newstyle);
-    //Enabled by default
-    //document.querySelector("#readtransparencycss").disabled = true;
-
-    //Low Opacity comment css
-    newstyle = document.createElement("style");
-    newstyle.id = "commenttransparencycss";
-    newstyle.innerHTML = `
-    .notificationComment {
+    #innerNotifications.opacitycomment .notificationComment {
         opacity: 36%;
     }
-    `;
-    document.head.append(newstyle);
-    //Enabled by default
-    //document.querySelector("#commenttransparencycss").disabled = true;
 
-    //hide livestreams css
-    newstyle = document.createElement("style");
-    newstyle.id = "hidelivecss";
-    newstyle.innerHTML = `
-    .notificationLive {
+    #innerNotifications.hidelive .notificationLive {
+        /* display: none; */
+        max-height: 0px;
+        opacity: 0;
+        visibility: hidden;
+        margin-block: 0;
+    }
+    #innerNotifications.hideread .notificationRead {
+        /* display: none; */
+        max-height: 0px;
+        opacity: 0;
+        visibility: hidden;
+        margin-block: 0;
+    }
+    #innerNotifications.hidereplies .notificationComment {
         /* display: none; */
         max-height: 0px;
         opacity: 0;
@@ -1386,37 +1352,6 @@ function addStyles() {
     }
     `;
     document.head.append(newstyle);
-    document.querySelector("#hidelivecss").disabled = true;
-
-    //hide read notifications css
-    newstyle = document.createElement("style");
-    newstyle.id = "hidereadcss";
-    newstyle.innerHTML = `
-    .notificationRead {
-        /* display: none; */
-        max-height: 0px;
-        opacity: 0;
-        visibility: hidden;
-        margin-block: 0;
-    }
-    `;
-    document.head.append(newstyle);
-    document.querySelector("#hidereadcss").disabled = true;
-
-    //hide comments css
-    newstyle = document.createElement("style");
-    newstyle.id = "hiderepliescss";
-    newstyle.innerHTML = `
-    .notificationComment {
-        /* display: none; */
-        max-height: 0px;
-        opacity: 0;
-        visibility: hidden;
-        margin-block: 0;
-    }
-    `;
-    document.head.append(newstyle);
-    document.querySelector("#hiderepliescss").disabled = true;
 
     //smaller notifications panel css
     newstyle = document.createElement("style");
@@ -1614,7 +1549,7 @@ async function sendEmail(videoDict) {
         //expose raw html for debugging purposes
         emailhtml = newhtml;
         // Convert the HTML string into a document object
-        var parser = new DOMParser();
+        let parser = new DOMParser();
 
         let emaildoc = parser.parseFromString(newhtml, 'text/html');
 
@@ -1968,7 +1903,7 @@ async function errorButtonClick() {
     let errored_logs = await checkErrorLogs();
     console.log("🚀 YTBN ~ errorButtonClick ~ errored_logs", { errored_logs });
     if (errored_logs.length > 0) {
-        var r = confirm("Would you like to re-send all errored emails?");
+        let r = confirm("Would you like to re-send all errored emails?");
         if (r != true) {
             return;
         }
@@ -2161,10 +2096,8 @@ ${message}`;
 
 
 function setupNotificationDiv() {
-    let innerNotificationsDiv = document.createElement("div");
-    let outerNotificationsDiv = document.createElement("div");
-    outerNotificationsDiv.id = "outerNotifications";
-    innerNotificationsDiv.id = "innerNotifications";
+    const outerNotifNode = document.createElement("div");
+    outerNotifNode.id = "outerNotifications";
 
     const divHTML = `<div id="sidebuttons">
         <div id="sidebuttonsTop">
@@ -2176,17 +2109,17 @@ function setupNotificationDiv() {
             <div id="livesideButtons" style="border: 2px #3ea6ff44 solid; border-radius: 8px; margin: 0px 8px 6px 8px">
                 <div style="position: absolute; margin: -12px 0px 0px 24px; font-size: 10pt; background: #151515; padding: 1px">Livestreams</div>
                 <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px)" id="hideliveCheckbox" noink>Hide</tp-yt-paper-checkbox>
-                <tp-yt-paper-checkbox style="" id="livetransparencyCheckbox" noink checked>Opacity</tp-yt-paper-checkbox>
+                <tp-yt-paper-checkbox style="" id="livetransparencyCheckbox" noink>Opacity</tp-yt-paper-checkbox>
             </div>
             <div id="readsideButtons" style="border: 2px #3ea6ff44 solid; border-radius: 8px; margin: 8px 8px 6px 8px">
                 <div style="position: absolute; margin: -12px 0px 0px 24px; font-size: 10pt; background: #151515; padding: 1px">Read</div>
                 <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px)" id="hidereadCheckbox" noink>Hide</tp-yt-paper-checkbox>
-                <tp-yt-paper-checkbox style="" id="readtransparencyCheckbox" noink checked>Opacity</tp-yt-paper-checkbox>
+                <tp-yt-paper-checkbox style="" id="readtransparencyCheckbox" noink>Opacity</tp-yt-paper-checkbox>
             </div>
             <div id="commentsideButtons" style="border: 2px #3ea6ff44 solid; border-radius: 8px; margin: 8px 8px 6px 8px">
-                <div style="position: absolute; margin: -12px 0px 0px 24px; font-size: 10pt; background: #151515; padding: 1px">Comments</div>
+                <div style="position: absolute; margin: -12px 0px 0px 24px; font-size: 10pt; background: #151515; padding: 1px">Non-Video</div>
                 <tp-yt-paper-checkbox style="margin-top: calc(0.5em + 4px)" id="hiderepliesCheckbox" noink>Hide</tp-yt-paper-checkbox>
-                <tp-yt-paper-checkbox style="" id="commenttransparencyCheckbox" noink checked>Opacity</tp-yt-paper-checkbox>
+                <tp-yt-paper-checkbox style="" id="commenttransparencyCheckbox" noink>Opacity</tp-yt-paper-checkbox>
             </div>
         </div>
         <div id="sidebuttonsBottom">
@@ -2209,35 +2142,37 @@ function setupNotificationDiv() {
     </div>
     <div id="innerNotifications"></div>`;
 
-    document.querySelector("body").append(outerNotificationsDiv);
-    outerNotificationsDiv.innerHTML = divHTML;
-    document.querySelector("#sidebuttons #readallCheckbox").addEventListener('click', togglereadAll);
-    document.querySelector("#sidebuttons #hideliveCheckbox").addEventListener('click', hideLive);
-    document.querySelector("#sidebuttons #hidereadCheckbox").addEventListener('click', hideRead);
-    document.querySelector("#sidebuttons #hiderepliesCheckbox").addEventListener('click', hideReplies);
-    document.querySelector("#sidebuttons #livetransparencyCheckbox").addEventListener('click', livetransparency);
-    document.querySelector("#sidebuttons #readtransparencyCheckbox").addEventListener('click', readtransparency);
-    document.querySelector("#sidebuttons #commenttransparencyCheckbox").addEventListener('click', commenttransparency);
-    document.querySelector("#sidebuttons #displayOptionsButton").addEventListener('click', displayTabbedOptions);
-    document.querySelector("#sidebuttons #displayErrorListButton").addEventListener('click', errorButtonClick);
-    document.querySelector("#sidebuttons #sidebarFilterInput").addEventListener('keyup', sidebarFilterKeyup);
-    document.querySelector("#sidebuttons #sidebarFilterInput").addEventListener('input', sidebarFilterInput);
-    document.querySelector("#sidebuttons #sidebarFilterInput input").addEventListener('blur', sidebarFilterBlur);
-    document.querySelector("#sidebuttons #filterClearButton").addEventListener('mousedown', filterClearMousedown);
+    document.querySelector("body").append(outerNotifNode);
+    outerNotifNode.innerHTML = divHTML;
+    const innerNotifNode = outerNotifNode.querySelector("#innerNotifications");
+    outerNotifNode.querySelector("#sidebuttons #readallCheckbox").addEventListener('click', togglereadAll);
+    outerNotifNode.querySelector("#sidebuttons #hideliveCheckbox").addEventListener('click', () => innerNotifNode.classList.toggle("hidelive"));
+    outerNotifNode.querySelector("#sidebuttons #hidereadCheckbox").addEventListener('click', () => innerNotifNode.classList.toggle("hideread"));
+    outerNotifNode.querySelector("#sidebuttons #hiderepliesCheckbox").addEventListener('click', () => innerNotifNode.classList.toggle("hidereplies"));
+    outerNotifNode.querySelector("#sidebuttons #livetransparencyCheckbox").addEventListener('click', () => innerNotifNode.classList.toggle("opacitylive"));
+    outerNotifNode.querySelector("#sidebuttons #readtransparencyCheckbox").addEventListener('click', () => innerNotifNode.classList.toggle("opacityread"));
+    outerNotifNode.querySelector("#sidebuttons #commenttransparencyCheckbox").addEventListener('click', () => innerNotifNode.classList.toggle("opacitycomment"));
+    outerNotifNode.querySelector("#sidebuttons #displayOptionsButton").addEventListener('click', displayTabbedOptions);
+    outerNotifNode.querySelector("#sidebuttons #displayErrorListButton").addEventListener('click', errorButtonClick);
+    outerNotifNode.querySelector("#sidebuttons #sidebarFilterInput").addEventListener('keyup', sidebarFilterKeyup);
+    outerNotifNode.querySelector("#sidebuttons #sidebarFilterInput").addEventListener('input', sidebarFilterInput);
+    outerNotifNode.querySelector("#sidebuttons #sidebarFilterInput input").addEventListener('blur', sidebarFilterBlur);
+    outerNotifNode.querySelector("#sidebuttons #filterClearButton").addEventListener('mousedown', filterClearMousedown);
     return "pagination";
 }
 
 function useTokenCheckboxClicked(event) {
+    const notificationOptions = document.querySelector("#outerNotifications #notificationOptions");
     if (document.querySelector("#useSecureTokenCheckbox").checked) {
-        document.querySelector("#notificationOptions #emailHost").disabled = true;
-        document.querySelector("#notificationOptions #emailUsername").disabled = true;
-        document.querySelector("#notificationOptions #emailPassword").disabled = true;
-        document.querySelector("#notificationOptions #emailSecureToken").disabled = false;
+        notificationOptions.querySelector("#emailHost").disabled = true;
+        notificationOptions.querySelector("#emailUsername").disabled = true;
+        notificationOptions.querySelector("#emailPassword").disabled = true;
+        notificationOptions.querySelector("#emailSecureToken").disabled = false;
     } else {
-        document.querySelector("#notificationOptions #emailHost").disabled = false;
-        document.querySelector("#notificationOptions #emailUsername").disabled = false;
-        document.querySelector("#notificationOptions #emailPassword").disabled = false;
-        document.querySelector("#notificationOptions #emailSecureToken").disabled = true;
+        notificationOptions.querySelector("#emailHost").disabled = false;
+        notificationOptions.querySelector("#emailUsername").disabled = false;
+        notificationOptions.querySelector("#emailPassword").disabled = false;
+        notificationOptions.querySelector("#emailSecureToken").disabled = true;
     }
 
 }
@@ -2287,10 +2222,10 @@ async function setupPaginationButtons(notifcount = 999) {
         return;
     }
 
-    let pagingButtonsDiv = document.createElement("div");
-    pagingButtonsDiv.id = "pagingButtonsOuter";
+    const pagingButtonsNode = document.createElement("div");
+    pagingButtonsNode.id = "pagingButtonsOuter";
     //LATER instead of using a fixed position, put the buttons and innernotifications in another container div
-    pagingButtonsDiv.setAttribute("style", `
+    pagingButtonsNode.setAttribute("style", `
         position: fixed;
         width: 88%;
         bottom: 0px;
@@ -2299,44 +2234,35 @@ async function setupPaginationButtons(notifcount = 999) {
     `);
     let divHTML = `<div id="pagingButtons">
         <div class="notifRowItem" style="flex-grow: 0.8">
-            <tp-yt-paper-button id="firstpageButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">First Page</tp-yt-paper-button>
+            <tp-yt-paper-button id="firstpageButton" raised class="" style="opacity: ${(currentPage == 0) ? "0.4" : "1"}; border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">First Page</tp-yt-paper-button>
         </div>
         <div class="notifRowItem" style="flex-grow: 1"></div>
         <div class="notifRowItem">
-            <tp-yt-paper-button id="previouspageButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">Previous Page</tp-yt-paper-button>
+            <tp-yt-paper-button id="previouspageButton" raised class="" style="opacity: ${(currentPage == 0) ? "0.4" : "1"}; border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">Previous Page</tp-yt-paper-button>
         </div>
         <div class="notifRowItem" style="flex-grow: 0.5">
-            <div id="pageNumber" style="text-align: center; font-size: 1.5em">CURRENTPAGENUMBER</div>
+            <div id="pageNumber" style="text-align: center; font-size: 1.5em">${currentPage + 1}</div>
         </div>
         <div class="notifRowItem">
-            <tp-yt-paper-button id="nextpageButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">Next Page</tp-yt-paper-button>
+            <tp-yt-paper-button id="nextpageButton" raised class="" style="opacity: ${(currentPage == maxPages - 1) ? "0.4" : "1"}; border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">Next Page</tp-yt-paper-button>
         </div>
         <div class="notifRowItem" style="flex-grow: 1"></div>
         <div class="notifRowItem" style="flex-grow: 0.8">
-            <tp-yt-paper-button id="lastpageButton" raised class="" style="border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">Last Page</tp-yt-paper-button>
+            <tp-yt-paper-button id="lastpageButton" raised class="" style="opacity: ${(currentPage == maxPages - 1) ? "0.4" : "1"}; border: 1px #82c7f299 solid; font-size: 0.8em; text-align: center; margin: 12px 12px 12px 12px">Last Page</tp-yt-paper-button>
         </div>
     </div>
     `;
-    divHTML = divHTML.replace('CURRENTPAGENUMBER', currentPage + 1);
 
 
-    document.querySelector("#innerNotifications").append(pagingButtonsDiv);
-    pagingButtonsDiv.innerHTML = divHTML;
+    document.querySelector("#innerNotifications").append(pagingButtonsNode);
+    pagingButtonsNode.innerHTML = divHTML;
 
-    document.querySelector("#pagingButtons #previouspageButton").addEventListener('click', previousPage);
-    document.querySelector("#pagingButtons #nextpageButton").addEventListener('click', nextPage);
-    document.querySelector("#pagingButtons #firstpageButton").addEventListener('click', firstPage);
-    document.querySelector("#pagingButtons #lastpageButton").addEventListener('click', lastPage);
+    pagingButtonsNode.querySelector("#previouspageButton").addEventListener('click', previousPage);
+    pagingButtonsNode.querySelector("#nextpageButton").addEventListener('click', nextPage);
+    pagingButtonsNode.querySelector("#firstpageButton").addEventListener('click', firstPage);
+    pagingButtonsNode.querySelector("#lastpageButton").addEventListener('click', lastPage);
 
-    //no need to set them back to 100% as they redraw
-    if (currentPage == maxPages - 1) {
-        document.querySelector("#nextpageButton").style.opacity = "40%";
-        document.querySelector("#lastpageButton").style.opacity = "40%";
-    }
-    if (currentPage == 0) {
-        document.querySelector("#previouspageButton").style.opacity = "40%";
-        document.querySelector("#firstpageButton").style.opacity = "40%";
-    }
+    //no need to set button opacity back to 100% as they will be redrawn
 }
 
 function displayTabbedOptions() {
@@ -2345,12 +2271,12 @@ function displayTabbedOptions() {
         return;
     }
 
-    let optionsDiv = document.createElement("div");
-    optionsDiv.id = "notificationOptions";
+    const optionsNode = document.createElement("div");
+    optionsNode.id = "notificationOptions";
     //Hide the options menu for now
-    optionsDiv.style.visibility = false;
+    optionsNode.style.visibility = false;
 
-    const optionsHTML = `<div id="backgroundOverlay"></div>
+    const optionsHTML = `<div id="backgroundOverlay" title="Close"></div>
     <div class="material-tabs">
         <div class="tabbed-section__selector">
             <a class="tabbed-section__selector-tab-1 active">GENERAL</a>
@@ -2411,26 +2337,26 @@ function displayTabbedOptions() {
     </div>
     `;
 
-    document.querySelector("#outerNotifications").append(optionsDiv);
-    optionsDiv.innerHTML = optionsHTML;
+    document.querySelector("#outerNotifications").append(optionsNode);
+    optionsNode.innerHTML = optionsHTML;
 
     let importInput = document.querySelector("#notificationOptions #importinput");
     importInput.outerHTML = importInput.outerHTML.replace("<input", "<tp-yt-paper-input");
 
-    document.querySelector("#notificationOptions #discardNotificationsButton").addEventListener('click', discardNotifications);
-    document.querySelector("#notificationOptions #discardLogsButton").addEventListener('click', discardLogs);
-    document.querySelector("#notificationOptions #discardSettingsButton").addEventListener('click', discardSettings);
-    document.querySelector("#notificationOptions #saveButtonEmail").addEventListener('click', saveOptionsEmail);
-    document.querySelector("#notificationOptions #sendEmailButton").addEventListener('click', testEmail);
-    document.querySelector("#notificationOptions #exportDatabaseButton").addEventListener('click', exportDB);
-    document.querySelector("#notificationOptions #importDatabaseButton").addEventListener('click', importDB);
-    document.querySelector("#notificationOptions #useSecureTokenCheckbox").addEventListener('click', useTokenCheckboxClicked);
+    optionsNode.querySelector("#discardNotificationsButton").addEventListener('click', discardNotifications);
+    optionsNode.querySelector("#discardLogsButton").addEventListener('click', discardLogs);
+    optionsNode.querySelector("#discardSettingsButton").addEventListener('click', discardSettings);
+    optionsNode.querySelector("#saveButtonEmail").addEventListener('click', saveOptionsEmail);
+    optionsNode.querySelector("#sendEmailButton").addEventListener('click', testEmail);
+    optionsNode.querySelector("#exportDatabaseButton").addEventListener('click', exportDB);
+    optionsNode.querySelector("#importDatabaseButton").addEventListener('click', importDB);
+    optionsNode.querySelector("#useSecureTokenCheckbox").addEventListener('click', useTokenCheckboxClicked);
 
-    document.querySelector("#notificationOptions #saveButtonOptions").addEventListener('click', saveOptions);
-    document.querySelector("#notificationOptions #loadallButton").addEventListener('click', loadAll);
+    optionsNode.querySelector("#saveButtonOptions").addEventListener('click', saveOptions);
+    optionsNode.querySelector("#loadallButton").addEventListener('click', loadAll);
 
-    let authorizeButton = document.querySelector("#notificationOptions #authButtonEmail");
-    let signoutButton = document.querySelector("#notificationOptions #signoutButtonEmail");
+    let authorizeButton = optionsNode.querySelector("#authButtonEmail");
+    let signoutButton = optionsNode.querySelector("#signoutButtonEmail");
     authorizeButton.addEventListener('click', emailGAPI.handleAuthClick);
     signoutButton.addEventListener('click', emailGAPI.handleSignoutClick);
 
@@ -2440,87 +2366,53 @@ function displayTabbedOptions() {
         authorizeButton.style.display = 'block';
     }
 
-    document.querySelector("#notificationOptions #importinput").addEventListener('change', fileInputOnchange);
+    optionsNode.querySelector("#importinput").addEventListener('change', fileInputOnchange);
 
     //Close button click events
-    document.querySelectorAll("#notificationOptions .closeButtonSettings").forEach(item => {
+    optionsNode.querySelectorAll(".closeButtonSettings").forEach(item => {
         item.addEventListener('click', event => {
-            document.querySelector("#notificationOptions").remove();
+            optionsNode.remove();
         });
     });
 
     //backgroundOverlay is the same as close button
-    document.querySelector("#notificationOptions #backgroundOverlay").addEventListener('click', event => {
-        document.querySelector("#notificationOptions").remove();
+    optionsNode.querySelector("#backgroundOverlay").addEventListener('click', event => {
+        optionsNode.remove();
     });
 
     /* Base tabbed material panel from https://codepen.io/LukyVj/pen/yNwgrK */
     // TOGGLE SECTIONS
     // Define tabs, write down them classes
-    var tabs = [
+    const tabSelectors = [
         '.tabbed-section__selector-tab-1',
         '.tabbed-section__selector-tab-2',
         '.tabbed-section__selector-tab-3'
     ];
 
     // Create the toggle function
-    var toggleTab = function (element) {
-        var parent = element.parentNode;
-
+    const addTabEvent = function (element) {
         // Do things on click
-        document.querySelectorAll(element)[0].addEventListener('click', function () {
-            // Remove the active class on all tabs.
-            // climbing up the DOM tree with `parentNode` and target
-            // the children ( the tabs ) with childNodes
-            this.parentNode.childNodes[1].classList.remove('active');
-            this.parentNode.childNodes[3].classList.remove('active');
-            this.parentNode.childNodes[5].classList.remove('active');
-
-            // Then, give `this` (the clicked tab), the active class
+        optionsNode.querySelector(element).addEventListener('click', function () {
+            // Remove the active class on all tab selectors.
+            tabSelectors.forEach(tab => optionsNode.querySelector(tab).classList.remove('active'));
+            // Add active class to the clicked tab selector
             this.classList.add('active');
 
-            // Check if the clicked tab contains the class of the 1 or 2
-            if (this.classList.contains('tabbed-section__selector-tab-1')) {
-                // and change the classes, show the first content panel
-                document.querySelectorAll('.tabbed-section-1')[0].classList.remove('hidden');
-                document.querySelectorAll('.tabbed-section-1')[0].classList.add('visible');
+            // Hide all sections
+            optionsNode.querySelectorAll('[class*="tabbed-section-"]').forEach(section => {
+                section.classList.remove('visible');
+                section.classList.add('hidden');
+            });
 
-                // Hide the second
-                document.querySelectorAll('.tabbed-section-2')[0].classList.remove('visible');
-                document.querySelectorAll('.tabbed-section-2')[0].classList.add('hidden');
-                document.querySelectorAll('.tabbed-section-3')[0].classList.remove('visible');
-                document.querySelectorAll('.tabbed-section-3')[0].classList.add('hidden');
-            }
-
-            if (this.classList.contains('tabbed-section__selector-tab-2')) {
-                // and change the classes, show the second content panel
-                document.querySelectorAll('.tabbed-section-2')[0].classList.remove('hidden');
-                document.querySelectorAll('.tabbed-section-2')[0].classList.add('visible');
-                // Hide the first
-                document.querySelectorAll('.tabbed-section-1')[0].classList.remove('visible');
-                document.querySelectorAll('.tabbed-section-1')[0].classList.add('hidden');
-                document.querySelectorAll('.tabbed-section-3')[0].classList.remove('visible');
-                document.querySelectorAll('.tabbed-section-3')[0].classList.add('hidden');
-            }
-
-            if (this.classList.contains('tabbed-section__selector-tab-3')) {
-                // and change the classes, show the second content panel
-                document.querySelectorAll('.tabbed-section-3')[0].classList.remove('hidden');
-                document.querySelectorAll('.tabbed-section-3')[0].classList.add('visible');
-                // Hide the first
-                document.querySelectorAll('.tabbed-section-1')[0].classList.remove('visible');
-                document.querySelectorAll('.tabbed-section-1')[0].classList.add('hidden');
-                document.querySelectorAll('.tabbed-section-2')[0].classList.remove('visible');
-                document.querySelectorAll('.tabbed-section-2')[0].classList.add('hidden');
-            }
+            // Show the corresponding section
+            const sectionNumber = this.className.match(/tabbed-section__selector-tab-(\d)/)[1];
+            optionsNode.querySelector(`.tabbed-section-${sectionNumber}`).classList.remove('hidden');
+            optionsNode.querySelector(`.tabbed-section-${sectionNumber}`).classList.add('visible');
         });
     };
 
-    // Then finally, iterates through all tabs, to activate the
-    // tabs system.
-    for (var i = tabs.length - 1; i >= 0; i--) {
-        toggleTab(tabs[i]);
-    }
+    // Then finally, iterates through all tabs, to add the event listener for the tabs
+    tabSelectors.forEach(addTabEvent);
     /* tabbed material panel end */
 
     //load settings into the inputs
@@ -2534,20 +2426,20 @@ function displayTabbedOptions() {
                     return;
                 }
 
-                document.querySelector("#emailGAPIClientID").value = emailSettings[0].value.GAPIid;
-                document.querySelector("#emailGAPIClientKey").value = emailSettings[0].value.GAPIkey;
-                document.querySelector("#emailHost").value = emailSettings[0].value.Host;
-                document.querySelector("#emailUsername").value = emailSettings[0].value.Username;
-                document.querySelector("#emailPassword").value = emailSettings[0].value.Password;
-                document.querySelector("#emailFrom").value = emailSettings[0].value.From;
-                document.querySelector("#emailTo").value = emailSettings[0].value.To;
-                document.querySelector("#emailSubject").value = emailSettings[0].value.Subject;
-                document.querySelector("#emailBody").value = emailSettings[0].value.Body;
-                document.querySelector("#emailSecureToken").value = emailSettings[0].value.SecureToken;
+                optionsNode.querySelector("#emailGAPIClientID").value = emailSettings[0].value.GAPIid;
+                optionsNode.querySelector("#emailGAPIClientKey").value = emailSettings[0].value.GAPIkey;
+                optionsNode.querySelector("#emailHost").value = emailSettings[0].value.Host;
+                optionsNode.querySelector("#emailUsername").value = emailSettings[0].value.Username;
+                optionsNode.querySelector("#emailPassword").value = emailSettings[0].value.Password;
+                optionsNode.querySelector("#emailFrom").value = emailSettings[0].value.From;
+                optionsNode.querySelector("#emailTo").value = emailSettings[0].value.To;
+                optionsNode.querySelector("#emailSubject").value = emailSettings[0].value.Subject;
+                optionsNode.querySelector("#emailBody").value = emailSettings[0].value.Body;
+                optionsNode.querySelector("#emailSecureToken").value = emailSettings[0].value.SecureToken;
                 shouldSendEmail = emailSettings[0].value.SendEmail;
                 useEmailSecureToken = emailSettings[0].value.UseSecureToken;
-                document.querySelector("#sendEmailCheckbox").checked = shouldSendEmail;
-                document.querySelector("#useSecureTokenCheckbox").checked = useEmailSecureToken;
+                optionsNode.querySelector("#sendEmailCheckbox").checked = shouldSendEmail;
+                optionsNode.querySelector("#useSecureTokenCheckbox").checked = useEmailSecureToken;
                 //Setup disabled/enabled inputs
                 useTokenCheckboxClicked();
                 return;
@@ -2564,9 +2456,9 @@ function displayTabbedOptions() {
 
                 useRelativeTime = options[0].value.UseRelativeTime;
                 useDailyLargeCheck = options[0].value?.UseDailyLargeCheck || false;
-                document.querySelector("#optionRelativeTimeCheckbox").checked = useRelativeTime;
-                document.querySelector("#optionDailyLargeCheckbox").checked = useDailyLargeCheck;
-                document.querySelector("#optionItemsPerPage").value = itemsPerPage;
+                optionsNode.querySelector("#optionRelativeTimeCheckbox").checked = useRelativeTime;
+                optionsNode.querySelector("#optionDailyLargeCheckbox").checked = useDailyLargeCheck;
+                optionsNode.querySelector("#optionItemsPerPage").value = itemsPerPage;
                 return;
             });
 
@@ -2575,7 +2467,7 @@ function displayTabbedOptions() {
     }
 
     //Finally, unhide the options menu
-    optionsDiv.style.visibility = true;
+    optionsNode.style.visibility = true;
 }
 
 
