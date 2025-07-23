@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name            YtBetterNotifications (Alpha)
 // @namespace       Yt.Better.Notifications
-// @version         1.1.31
+// @version         1.1.34
 // @description     A new youtube desktop notifications panel with extra functionality.
 // @author          Onurtag
 // @match           https://www.youtube.com/new*
@@ -46,6 +46,7 @@ const regexImageURLtoID = /https?:\/\/i.ytimg.com\/(vi|vi_webp)\/(.*?)\/.*?.(jpg
 /*
 TODO: Increment Version Number
 TODO: (optionally) Get more data while saving notifications (instead of doing it before sending emails.) Needs to be batched to prevent throttling.
+TODO LATER: Cleanup redundant code, use loops & generated html
 
 LATER: Link channel image to channel if I have the data
 LATER: Add a "Saved!" popup when you click save
@@ -97,15 +98,15 @@ document.body.appendChild(ifr);
 const fetch = ifr.contentWindow.fetch;    //only for our context (not window.fetch)
 
 function startup() {
-    let startInterval = setInterval(async () => {
+    async function waitForButton() {
         //wait for the notification button to appear (first load)
         buttonElement = document.querySelector("[class*='notification-topbar-button'] > button") ||
             document.querySelector("div#button.ytd-notification-topbar-button-renderer") ||
             document.querySelector(".ytd-notification-topbar-button-shape-renderer #button.yt-icon-button");
         if (buttonElement == null) {
+            setTimeout(waitForButton, 100);
             return;
         }
-        clearInterval(startInterval);
 
         //set moment.js locale
         moment.locale(document.querySelector("html").lang);
@@ -133,14 +134,12 @@ function startup() {
         buttonElement.click();
 
         let waiting = 0;
-        let startInterval2 = setInterval(() => {
+        function waitForGAPIAndNotif() {
             //Wait for the GAPI if we are using it.
             if (shouldSendEmail == false || GAPIClientID == null || emailGAPIReady == true || waiting > 5000) {
 
                 //Wait for any notification element to appear
                 if (document.querySelector('ytd-notification-renderer') != null) {
-                    clearInterval(startInterval2);
-
                     //default scroll settings
                     let scrolls = 2;
                     let scrollInterval = 155;
@@ -159,16 +158,16 @@ function startup() {
                     }
 
                     scrollNotifications(scrolls, scrollInterval);
-
-
+                    return;
                 }
             }
             //LATER: this might not work correctly if the tab is throttled. Probably a better idea to use Now() etc.
             waiting += 100;
-        }, 100);
-        return;
-
-    }, 100);
+            setTimeout(waitForGAPIAndNotif, 100);
+        }
+        waitForGAPIAndNotif();
+    }
+    waitForButton();
 }
 
 function scrollNotifications(scrolltimes = 1, interval = 155) {
@@ -188,7 +187,7 @@ function scrollNotifications(scrolltimes = 1, interval = 155) {
         startedChecking = false;
     let prev_notifLast;
 
-    let scrollInterval = setInterval(() => {
+    function doScroll() {
         //verify and correct scroll count
         let notifs = document.querySelectorAll("ytd-notification-renderer");
         let notifCount = notifs.length;
@@ -216,6 +215,7 @@ function scrollNotifications(scrolltimes = 1, interval = 155) {
             } catch (error) {
                 console.log("🚀 YTBN ~ scrolling error:", { error });
             }
+            // console.log("🚀 YTBN ~ scrollInterval ~ notificationcount:", notifCount, "nullcount:", nullcount, "toBeFixed:", toBeFixed);
         } else {
             //---FORWARD Scrolling finished---
             //---FORWARD Scrolling finished---
@@ -245,14 +245,15 @@ function scrollNotifications(scrolltimes = 1, interval = 155) {
                 //---ALL Scrolling finished---
                 //---ALL Scrolling finished---
                 console.log("🚀 YTBN ~ All good. Notification count & fix count:", count, fixCount);
-                //Stop interval
-                clearInterval(scrollInterval);
                 //Continue the rest of the loading process
                 continuing(count);
+                return;
             }
+            console.log("🚀 YTBN ~ scrollInterval ~ notificationcount:", notifCount, "nullcount:", nullcount, "toBeFixed:", toBeFixed);
         }
-        console.log("🚀 YTBN ~ scrollInterval ~ notificationcount:", notifCount, "nullcount:", nullcount, "toBeFixed:", toBeFixed);
-    }, interval);
+        setTimeout(doScroll, interval);
+    }
+    doScroll();
 }
 
 //LATER convert to async
@@ -562,6 +563,8 @@ async function saveNotifications(nC) {
             notVideo = true;
             let matchingID = videoImage.match(regexImageURLtoID)[2];
             rowUrl = 'https://www.youtube.com/watch?v=' + matchingID;
+        } else if (rowUrl == "" && videoImage == "") {
+            notVideo = true;
         }
         const strings = element.querySelectorAll("yt-formatted-string");
 
@@ -1865,7 +1868,7 @@ async function readSettings() {
             });
 
         //load GAPI if they are present
-        if (GAPIClientID && GAPIClientKey) {
+        if (shouldSendEmail && GAPIClientID && GAPIClientKey) {
             await emailGAPI.handleClientLoad();
         }
 
@@ -2289,7 +2292,7 @@ function displayTabbedOptions() {
             <tp-yt-paper-button id="loadallButton" raised class="" style="margin-top: auto">LOAD ALL NOTIFICATIONS</tp-yt-paper-button>
             <tp-yt-paper-checkbox id="optionRelativeTimeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin: 50px auto 5px auto">Display relative time</tp-yt-paper-checkbox>
             <tp-yt-paper-checkbox id="optionDailyLargeCheckbox" noink style="--tp-yt-paper-checkbox-ink-size: 54px; font-size: 12pt; margin: 50px auto 5px auto">Daily large checks</tp-yt-paper-checkbox>
-            <tp-yt-paper-input type="number" id="optionItemsPerPage" min="5" max="200" label="Notifications Per Page (5-200)" noink style="font-size: 12pt; margin: 50px auto 5px auto">Notifications Per Page</tp-yt-paper-input>
+            <tp-yt-paper-input type="number" id="optionItemsPerPage" min="5" max="200" label="Notifications Per Page (5-200)" noink style="font-size: 12pt; margin: 50px auto 5px auto; width: 175px;">Notifications Per Page</tp-yt-paper-input>
             <tp-yt-paper-button id="saveButtonOptions" raised class="" style="margin-top: auto; margin-bottom: 0px">SAVE</tp-yt-paper-button>
             <tp-yt-paper-button class="closeButtonSettings" raised class="" style="margin-top: 14px; margin-bottom: 0px">CLOSE</tp-yt-paper-button>
         </div>
@@ -2426,6 +2429,7 @@ function displayTabbedOptions() {
                     return;
                 }
 
+                //LATER: These can be cleaned up and done in a loop
                 optionsNode.querySelector("#emailGAPIClientID").value = emailSettings[0].value.GAPIid;
                 optionsNode.querySelector("#emailGAPIClientKey").value = emailSettings[0].value.GAPIkey;
                 optionsNode.querySelector("#emailHost").value = emailSettings[0].value.Host;
@@ -2472,13 +2476,20 @@ function displayTabbedOptions() {
 
 
 //Load client gapi before anything as it takes some time to load.
-gapi.load('client:auth2');
-let gapiInterval = setInterval(() => {
-    //wait for the gapi to load
-    if (gapi.auth2) {
-        clearInterval(gapiInterval);
-        //Run the regular startup.
-        startup();
+if (shouldSendEmail) {
+    gapi.load('client:auth2');
+    function waitForGapi() {
+        //wait for the gapi to load
+        if (gapi.auth2) {
+            //Run the regular startup.
+            startup();
+        } else {
+            setTimeout(waitForGapi, 50);
+        }
     }
-}, 50);
-//startup();
+    // setTimeout(waitForGapi, 50);
+    waitForGapi();
+} else {
+    //If email is not enabled, just run the startup.
+    startup();
+}
