@@ -359,6 +359,151 @@ async function importDB(event) {
     }
 }
 
+async function bulkImportLinks(event) {
+    const textarea = document.querySelector("#bulkImportTextarea");
+    const linksText = textarea.value.trim();
+
+    if (!linksText) {
+        alert("Please paste some YouTube links first.");
+        return;
+    }
+
+    // Parse links from textarea (one per line)
+    const links = linksText.split('\n')
+        .map(link => link.trim())
+        .filter(link => link.length > 0)
+        .filter(link => isValidYouTubeURL(link));
+
+    if (links.length === 0) {
+        alert("No valid YouTube links found. Please check your input.");
+        return;
+    }
+
+    let r = confirm(`Found ${links.length} YouTube link(s). Do you want to import them as notifications?`);
+    if (r != true) {
+        return;
+    }
+
+    try {
+        showSpinner();
+        console.log("🚀 YTBN ~ Bulk importing links:", links);
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < links.length; i++) {
+            try {
+                await processYouTubeLink(links[i]);
+                successCount++;
+            } catch (error) {
+                console.error(`🚀 YTBN ~ Error processing link ${links[i]}:`, error);
+                errorCount++;
+            }
+        }
+
+        showSpinner(false);
+
+        // Reload notifications to show the new ones
+        await loadNotifications(0);
+        currentPage = 0;
+        setupPaginationButtons();
+
+        // Clear the textarea
+        textarea.value = '';
+
+        alert(`Import complete!\nSuccessfully imported: ${successCount}\nErrors: ${errorCount}`);
+        console.log(`🚀 YTBN ~ Bulk import complete. Success: ${successCount}, Errors: ${errorCount}`);
+
+    } catch (error) {
+        showSpinner(false);
+        console.error('🚀 YTBN ~ Bulk import error:', error);
+        alert('An error occurred during bulk import. Check the console for details.');
+    }
+}
+
+function isValidYouTubeURL(url) {
+    // Check for various YouTube URL formats
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)[\w-]+/;
+    return youtubeRegex.test(url);
+}
+
+function normalizeYouTubeURL(url) {
+    // Extract video ID and convert to standard watch URL
+    let videoId = null;
+
+    // Handle different YouTube URL formats
+    if (url.includes('youtube.com/watch?v=')) {
+        videoId = url.match(/[?&]v=([^&]+)/)?.[1];
+    } else if (url.includes('youtu.be/')) {
+        videoId = url.match(/youtu\.be\/([^?&]+)/)?.[1];
+    } else if (url.includes('youtube.com/embed/')) {
+        videoId = url.match(/embed\/([^?&]+)/)?.[1];
+    } else if (url.includes('youtube.com/v/')) {
+        videoId = url.match(/\/v\/([^?&]+)/)?.[1];
+    }
+
+    if (videoId) {
+        // Remove any additional parameters from video ID
+        videoId = videoId.split('&')[0].split('?')[0];
+        return `https://www.youtube.com/watch?v=${videoId}`;
+    }
+
+    return url; // Return original if we can't parse it
+}
+
+async function processYouTubeLink(url) {
+    const normalizedUrl = normalizeYouTubeURL(url);
+    const currentTime = Date.now();
+
+    // Create a basic notification object similar to what saveNotifications does
+    let currDict = {
+        id: uuidv4(),
+        hash: "",
+        url: normalizedUrl,
+        title: "Imported: " + normalizedUrl, // Temporary title, will be updated by fetchVideoData
+        time: currentTime, // Current timestamp, will be updated to publish date if available
+        userimgurl: "",
+        videoimgurl: "",
+        live: false,
+        read: false,
+        notvideo: false,
+    };
+
+    // Try to fetch video data to get proper title and images
+    try {
+        const videoData = await fetchVideoData(currDict);
+        // The fetchVideoData function modifies the videoDict and returns additional data
+        // We'll use the returned data if available
+        if (videoData && videoData.channelName) {
+            // Update title if we got better data
+            // The title should already be updated by fetchVideoData
+        }
+    } catch (error) {
+        console.warn("🚀 YTBN ~ Could not fetch video data for:", normalizedUrl, error);
+        // Continue with basic data if fetch fails
+    }
+
+    // Create hash for duplicate detection
+    currDict.hash = await digestToSHA256(currDict.url + currDict.userimgurl + currDict.title);
+
+    // Check for duplicates
+    const count = await db.notifications
+        .where('hash')
+        .equals(currDict.hash)
+        .count();
+
+    if (count > 0) {
+        console.log("🚀 YTBN ~ Skipping duplicate:", currDict.url);
+        return "duplicate";
+    }
+
+    // Save to database
+    const dbput = await db.notifications.put(currDict);
+    console.log("🚀 YTBN ~ Imported notification:", currDict.title, currDict.url);
+
+    return dbput;
+}
+
 function progressCallback({
     totalRows,
     completedRows
@@ -1353,6 +1498,15 @@ function addStyles() {
         visibility: hidden;
         margin-block: 0;
     }
+
+    /* Bulk import textarea styling */
+    #bulkImportTextarea {
+        max-height: 80px;
+        /* border: 1px solid #448aff; */
+        border-radius: 8px;
+        overflow: hidden;
+        resize: none;
+    }
     `;
     document.head.append(newstyle);
 
@@ -1532,18 +1686,15 @@ async function sendEmailBatch(videoDictArray) {
 
 }
 
-async function sendEmail(videoDict) {
-
-    //no need to clone videoDict
-
-    // console.log("🚀 YTBN ~ sendEmail -> videoDict", videoDict, Date.now());
-
+async function fetchVideoData(videoDict) {
     let channelName = "",
         channelURL = "",
         vidLength = "";
 
+    // Detect if this is a bulk import
+    const imported = videoDict.title && videoDict.title.startsWith("Imported: ");
+
     //Use fetch to get the video data
-    //This can be seperated into its own function if needed.
     await fetch(videoDict.url).then(function (response) {
         return response.text();
     }).then(function (newhtml) {
@@ -1609,7 +1760,6 @@ async function sendEmail(videoDict) {
 
         // Handle channelName
         try {
-
             let newChannelName = ytInitialPlayerResponse_PARSED?.videoDetails?.author ||
                 ytInitialPlayerResponse_PARSED?.microformat?.playerMicroformatRenderer?.ownerChannelName;
             if (newChannelName) {
@@ -1617,6 +1767,34 @@ async function sendEmail(videoDict) {
             }
         } catch (error) {
             console.warn("🚀 YTBN ~ channelname", error);
+        }
+
+        // Format title for bulk imports as "channelname uploaded: videotitle"
+        if (imported && channelName && !videoDict.notvideo) {
+            try {
+                let originalTitle = videoDict.title;
+
+                if (originalTitle) {
+                    videoDict.title = `${channelName} uploaded: ${originalTitle}`;
+                }
+            } catch (error) {
+                console.warn("🚀 YTBN ~ bulk import title formatting", error);
+            }
+        }
+
+        // Handle publish date for bulk imports
+        // Only update time if this is a bulk import
+        if (imported) {
+            try {
+                let publishDate = ytInitialPlayerResponse_PARSED?.microformat?.playerMicroformatRenderer?.publishDate ||
+                        ytInitialPlayerResponse_PARSED?.microformat?.playerMicroformatRenderer?.uploadDate;
+
+                if (publishDate) {
+                    videoDict.time = new Date(publishDate).getTime();
+                }
+            } catch (error) {
+                console.warn("🚀 YTBN ~ publishdate", error);
+            }
         }
 
         // Handle video length
@@ -1678,6 +1856,26 @@ async function sendEmail(videoDict) {
         // There was an error
         console.warn('🚀 YTBN ~ Something went wrong while fetching video data.', err);
     });
+
+    // Return the fetched data
+    return {
+        channelName: channelName,
+        channelURL: channelURL,
+        vidLength: vidLength
+    };
+}
+
+async function sendEmail(videoDict) {
+
+    //no need to clone videoDict
+
+    // console.log("🚀 YTBN ~ sendEmail -> videoDict", videoDict, Date.now());
+
+    // Fetch video data
+    const videoData = await fetchVideoData(videoDict);
+    let channelName = videoData.channelName;
+    let channelURL = videoData.channelURL;
+    let vidLength = videoData.vidLength;
 
     const emailSettings = await db.settings
         .where('key')
@@ -2326,6 +2524,12 @@ function displayTabbedOptions() {
         </div>
         <div class="tabbed-section-3 hidden">
             <div style="text-align: center; font-size: 14pt; margin-top: auto; margin-bottom: 10px">Be careful with your exported passwords and secrets.</div>
+            <div style="border: 2px solid #3EA6FF44; border-radius: 10px; padding: 12px;">
+                <div style="display: flex; align-items: flex-start; gap: 8px;">
+                    <tp-yt-paper-textarea id="bulkImportTextarea" label="Paste YouTube links here (one per line)" rows="2" style="flex: 1;"></tp-yt-paper-textarea>
+                    <tp-yt-paper-button id="bulkImportButton" raised class="">IMPORT LINKS</tp-yt-paper-button>
+                </div>
+            </div>
             <tp-yt-paper-button id="exportDatabaseButton" raised class="" style="">EXPORT DATABASE</tp-yt-paper-button>
             <input type="file" id="importinput" name="importinput" accept=".json" style="width: 50%; margin-left: auto; margin-right: auto" />
             <tp-yt-paper-button for="importinput" id="importDatabaseButton" class="" style="">IMPORT DATABASE</tp-yt-paper-button>
@@ -2353,6 +2557,7 @@ function displayTabbedOptions() {
     optionsNode.querySelector("#sendEmailButton").addEventListener('click', testEmail);
     optionsNode.querySelector("#exportDatabaseButton").addEventListener('click', exportDB);
     optionsNode.querySelector("#importDatabaseButton").addEventListener('click', importDB);
+    optionsNode.querySelector("#bulkImportButton").addEventListener('click', bulkImportLinks);
     optionsNode.querySelector("#useSecureTokenCheckbox").addEventListener('click', useTokenCheckboxClicked);
 
     optionsNode.querySelector("#saveButtonOptions").addEventListener('click', saveOptions);
