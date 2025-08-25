@@ -97,12 +97,67 @@ ifr.style.display = 'none';
 document.body.appendChild(ifr);
 const fetch = ifr.contentWindow.fetch;    //only for our context (not window.fetch)
 
+// --- YTBN: Popup container offscreen + lazy img observer (CSS version) ---
+let ytbnPopupStyleNode = null;
+let popupObserver = null;
+
+function optimizePopup() {
+    // Add CSS to move ytd-popup-container > tp-yt-iron-dropdown offscreen
+    if (!ytbnPopupStyleNode) {
+        ytbnPopupStyleNode = document.createElement('style');
+        ytbnPopupStyleNode.id = 'ytbn-popup-hide-style';
+        ytbnPopupStyleNode.textContent = `
+            ytd-popup-container > tp-yt-iron-dropdown img {
+                position: fixed !important;
+                top: -99999px !important;
+                left: -99999px !important;
+                z-index: 999999 !important;
+            }
+        `;
+        document.head.appendChild(ytbnPopupStyleNode);
+    }
+    // MutationObserver to set img loading=lazy
+    const popup = document.querySelector('ytd-popup-container');
+    if (!popup) return;
+    popupObserver = new MutationObserver(mutations => {
+        for (const m of mutations) {
+            for (const node of m.addedNodes) {
+                if (node.nodeType === 1) {
+                    if (node.tagName === 'IMG') {
+                        node.setAttribute('loading', 'lazy');
+                    } else {
+                        node.querySelectorAll && node.querySelectorAll('img').forEach(img => {
+                            img.setAttribute('loading', 'lazy');
+                        });
+                    }
+                }
+            }
+        }
+    });
+    popupObserver.observe(popup, { childList: true, subtree: true });
+    // Also set lazy on existing imgs
+    popup.querySelectorAll('img').forEach(img => {
+        img.setAttribute('loading', 'lazy');
+    });
+}
+
+function unoptimizePopup() {
+    // Remove CSS
+    if (ytbnPopupStyleNode) {
+        ytbnPopupStyleNode.remove();
+        ytbnPopupStyleNode = null;
+    }
+    // Disconnect observer
+    if (popupObserver) {
+        popupObserver.disconnect();
+        popupObserver = null;
+    }
+}
+
 function startup() {
     async function waitForButton() {
         //wait for the notification button to appear (first load)
-        buttonElement = document.querySelector("[class*='notification-topbar-button'] > button") ||
-            document.querySelector("div#button.ytd-notification-topbar-button-renderer") ||
-            document.querySelector(".ytd-notification-topbar-button-shape-renderer #button.yt-icon-button");
+        buttonElement = document.querySelector("ytd-app #masthead yt-icon-button[class*='notification-topbar-button'] > button");
         if (buttonElement == null) {
             setTimeout(waitForButton, 100);
             return;
@@ -130,6 +185,8 @@ function startup() {
 
         //Enable the smaller notifications panel css which loads notifications faster
         document.querySelector("#smallernotpanel").disabled = false;
+        // Hide popup container and start observing imgs (CSS version)
+        optimizePopup();
         //Open notifications panel for scrolling
         buttonElement.click();
 
@@ -258,6 +315,8 @@ function scrollNotifications(scrolltimes = 1, interval = 155) {
 
 //LATER convert to async
 function continuing(nC) {
+    // Restore popup container and imgs after scroll is finished ---
+    unoptimizePopup();
 
     //Async update the notifications database
     saveNotifications(nC).then(result => {
@@ -289,7 +348,6 @@ function continuing(nC) {
             localStorage.setItem("ytbnLastLargeCheck", Date.now());
         }
     });
-
 }
 
 //create random ids (without extra libraries)
@@ -656,6 +714,8 @@ function loadAll(event) {
     showSpinner();
     //Enable the smaller notifications panel which loads notifications faster
     document.querySelector("#smallernotpanel").disabled = false;
+    // Hide popup container and start observing imgs (CSS version)
+    optimizePopup();
     buttonElement.click();
     scrollNotifications(6666);
 }
@@ -880,7 +940,7 @@ function displayNotification(currDict) {
     let col1, col2, col3, col4, col5;
 
     //usericon
-    col1 = '<img src="' + currDict.userimgurl + '"></img>';
+    col1 = '<img loading="lazy" src="' + currDict.userimgurl + '"></img>';
 
     //time
     if (useRelativeTime) {
@@ -905,7 +965,7 @@ function displayNotification(currDict) {
     }
 
     //videothumb
-    let col4img = '<img src="' + currDict.videoimgurl + '"></img>';
+    let col4img = '<img loading="lazy" src="' + currDict.videoimgurl + '"></img>';
     col4 = '<a target="_blank" class="nvimgc" href="' + currDict.url + '">' + col4img + '</a>';
 
     if (currDict.read) {
