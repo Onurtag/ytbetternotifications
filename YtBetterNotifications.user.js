@@ -36,6 +36,19 @@ const MAX_LOG_SIZE = 600,
 ytbnDebugEmail = false;
 console.log("🚀 YTBN ~ ", { ytbnDebugEmail });
 
+//The following would be required for chromium tampermonkey to bypass TrustedHTML errors (for now). 
+// window.testTrusted = function() {
+// if (typeof window != "undefined" &&
+// ('trustedTypes' in window) &&
+// ('createPolicy' in window.trustedTypes) &&
+// (typeof window.trustedTypes.createPolicy == "function")) {
+//     window.trustedTypes.createPolicy('default', {createScriptURL: s => s, createScript: s => s, createHTML: s => s})
+// } else {
+//     setTimeout(window.testTrusted, 1000);
+// }
+// }
+// window.testTrusted();
+
 let dontSendEmailsOver = 150;
 let itemsPerPage = 50;
 let liveTitlePrependString = "🔴 ";
@@ -805,11 +818,18 @@ async function saveNotifications(nC) {
 
         console.log("🚀 YTBN ~ saveNotifications -> currDict", { currDict });
 
-        //detect livestreams
-        if (currDict.title.includes(" is live: ")) {
-            currDict.live = true;
-            //set livestreams as read automatically
-            currDict.read = true;
+        //detect livestreams (support multiple language variants)
+        const liveIndicators = [
+            " is live: ",
+            " がライブ配信中: "
+        ];
+        for (const li of liveIndicators) {
+            if (currDict.title.includes(li)) {
+                currDict.live = true;
+                //set livestreams as read automatically
+                currDict.read = true;
+                break;
+            }
         }
 
         //put the notification into the database
